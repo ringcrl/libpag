@@ -37,16 +37,6 @@ class GLCanvas : public Canvas {
   void drawAtlas(const Texture* atlas, const Matrix matrix[], const Rect tex[],
                  const Color colors[], size_t count) override;
 
- protected:
-  void onSave() override {
-  }
-  void onRestore() override {
-  }
-  void onSetMatrix(const Matrix&) override {
-  }
-  void onClipPath(const Path&) override {
-  }
-
  private:
   std::shared_ptr<Surface> _clipSurface = nullptr;
   std::shared_ptr<GLDrawer> _drawer = nullptr;

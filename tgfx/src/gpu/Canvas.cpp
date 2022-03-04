@@ -26,7 +26,6 @@ Canvas::Canvas(Surface* surface) : surface(surface) {
 }
 
 void Canvas::save() {
-  onSave();
   savedPaintList.push_back(globalPaint);
 }
 
@@ -36,7 +35,6 @@ void Canvas::restore() {
   }
   globalPaint = savedPaintList.back();
   savedPaintList.pop_back();
-  onRestore();
 }
 
 Matrix Canvas::getMatrix() const {
@@ -45,17 +43,14 @@ Matrix Canvas::getMatrix() const {
 
 void Canvas::setMatrix(const Matrix& matrix) {
   globalPaint.matrix = matrix;
-  onSetMatrix(globalPaint.matrix);
 }
 
 void Canvas::resetMatrix() {
   globalPaint.matrix.reset();
-  onSetMatrix(globalPaint.matrix);
 }
 
 void Canvas::concat(const Matrix& matrix) {
   globalPaint.matrix.preConcat(matrix);
-  onSetMatrix(globalPaint.matrix);
 }
 
 float Canvas::getAlpha() const {
@@ -79,10 +74,20 @@ Path Canvas::getTotalClip() const {
 }
 
 void Canvas::clipPath(const Path& path) {
-  onClipPath(path);
   auto clipPath = path;
   clipPath.transform(globalPaint.matrix);
   globalPaint.clip.addPath(clipPath, PathOp::Intersect);
+}
+
+void Canvas::clipMask(const Texture* mask, bool inverted) {
+  if (mask == nullptr) {
+    return;
+  }
+  MaskClip maskClip = {};
+  maskClip.mask = mask;
+  maskClip.inverted = inverted;
+  maskClip.matrix = globalPaint.matrix;
+  globalPaint.masks.push_back(maskClip);
 }
 
 void Canvas::drawRect(const Rect& rect, const Paint& paint) {

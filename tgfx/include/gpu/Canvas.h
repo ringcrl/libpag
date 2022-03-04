@@ -30,11 +30,18 @@ class Surface;
 
 class SurfaceOptions;
 
+struct MaskClip {
+  const Texture* mask = nullptr;
+  bool inverted = false;
+  Matrix matrix = Matrix::I();
+};
+
 struct CanvasPaint {
   float alpha = 1.0f;
   BlendMode blendMode = BlendMode::SrcOver;
   Matrix matrix = Matrix::I();
   Path clip = {};
+  std::vector<MaskClip> masks = {};
 };
 
 /**
@@ -133,6 +140,12 @@ class Canvas {
   void clipPath(const Path& path);
 
   /**
+   * Replaces clip with the intersection of clip and the specified mask texture. The mask is
+   * transformed by Matrix before it is combined with clip.
+   */
+  void clipMask(const Texture* mask, bool inverted);
+
+  /**
    * Replacing all pixels with transparent color.
    */
   virtual void clear() = 0;
@@ -192,11 +205,6 @@ class Canvas {
  protected:
   Surface* surface = nullptr;
   CanvasPaint globalPaint = {};
-
-  virtual void onSave() = 0;
-  virtual void onRestore() = 0;
-  virtual void onSetMatrix(const Matrix& matrix) = 0;
-  virtual void onClipPath(const Path& path) = 0;
 
  private:
   std::vector<CanvasPaint> savedPaintList = {};
