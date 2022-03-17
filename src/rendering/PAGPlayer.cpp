@@ -285,6 +285,9 @@ bool PAGPlayer::flushInternal(BackendSemaphore* signalSemaphore) {
       renderCache->programCompilingTime + renderCache->hardwareDecodingTime +
       renderCache->softwareDecodingTime;
   renderCache->totalTime = clock.measure("", "presenting");
+  if (stage->getRootComposition()) {
+    LOGE("%lld", renderCache->totalTime);
+  }
   //  auto composition = stage->getRootComposition();
   //  if (composition) {
   //    renderCache->printPerformance(composition->currentFrameInternal());

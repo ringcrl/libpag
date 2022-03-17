@@ -29,7 +29,7 @@
     [self addSubview:pagView];
     pagView.frame = self.frame;
     [pagView setRepeatCount:-1];
-    [pagView play];
+//    [pagView play];
 
 //    [self testMutiThread];
 }
@@ -56,7 +56,10 @@
         }
     }
 
+    [pagView setComposition:nil];
+    [pagView flush];
     [pagView setComposition:pagFile];
+    [pagView flush];
 }
 
 - (void)testMutiThread {
@@ -137,12 +140,13 @@
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-    if ([pagView isPlaying]) {
-        [pagView stop];
-    } else {
-        [pagView play];
-    }
+//    if ([pagView isPlaying]) {
+//        [pagView stop];
+//    } else {
+//        [pagView play];
+//    }
 
+    [self testFile:@"like.pag"];
 }
 
 @end
