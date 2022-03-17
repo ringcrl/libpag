@@ -29,6 +29,7 @@
 #include "gpu/ColorShader.h"
 #include "gpu/TextureFragmentProcessor.h"
 #include "gpu/TextureMaskFragmentProcessor.h"
+#include "core/Clock.h"
 
 namespace tgfx {
 GLCanvas::GLCanvas(Surface* surface) : Canvas(surface) {
@@ -44,6 +45,7 @@ void GLCanvas::drawTexture(const Texture* texture, const Texture* mask, bool inv
 }
 
 Texture* GLCanvas::getClipTexture() {
+    auto start = Clock::Now();
   if (_clipMask == nullptr) {
     _clipMask = Mask::Make(surface->width(), surface->height());
   }
@@ -61,6 +63,7 @@ Texture* GLCanvas::getClipTexture() {
   if (_clipTexture == nullptr) {
     _clipTexture = _clipMask->makeTexture(getContext());
   }
+    printf("GLCanvas::getClipTexture: %lld\n", Clock::Now() - start);
   return _clipTexture.get();
 }
 
@@ -197,17 +200,26 @@ void GLCanvas::fillPath(const Path& path, const Shader* shader) {
   auto deviceBounds = state->matrix.mapRect(localBounds);
   auto width = ceilf(deviceBounds.width());
   auto height = ceilf(deviceBounds.height());
+    auto start = Clock::Now();
   auto mask = Mask::Make(static_cast<int>(width), static_cast<int>(height));
   if (!mask) {
     return;
   }
+    getContext()->maskMakeCost += Clock::Now() - start;
+    printf("Mask::Make: %lld\n", Clock::Now() - start);
+    start = Clock::Now();
   auto totalMatrix = state->matrix;
   auto matrix = Matrix::MakeTrans(-deviceBounds.x(), -deviceBounds.y());
   matrix.postScale(width / deviceBounds.width(), height / deviceBounds.height());
   totalMatrix.postConcat(matrix);
   mask->setMatrix(totalMatrix);
+    start = Clock::Now();
   mask->fillPath(path);
+    getContext()->fillPathCost += Clock::Now() - start;
+    printf("mask->fillPath: %lld\n", Clock::Now() - start);
+    start = Clock::Now();
   auto maskTexture = mask->makeTexture(getContext());
+    printf("mask->makeTexture: %lld\n", Clock::Now() - start);
   drawMask(deviceBounds, maskTexture.get(), shader);
 }
 

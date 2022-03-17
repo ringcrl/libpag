@@ -84,6 +84,9 @@ class Context {
    * should resend. Shouldn't be called frequently for good performance.
    */
   virtual void resetState() = 0;
+    
+    int64_t fillPathCost = 0;
+    int64_t maskMakeCost = 0;
 
  protected:
   explicit Context(Device* device);

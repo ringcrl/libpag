@@ -258,6 +258,9 @@ bool PAGPlayer::flushInternal(BackendSemaphore* signalSemaphore) {
   if (pagSurface == nullptr) {
     return false;
   }
+    if (stage->getRootComposition()) {
+      LOGE("start.");
+    }
   updateStageSize();
 #ifndef PAG_BUILD_FOR_WEB
   // must be called before content comparing, otherwise decoders can not be prepared.
@@ -286,7 +289,7 @@ bool PAGPlayer::flushInternal(BackendSemaphore* signalSemaphore) {
       renderCache->softwareDecodingTime;
   renderCache->totalTime = clock.measure("", "presenting");
   if (stage->getRootComposition()) {
-    LOGE("%lld", renderCache->totalTime);
+    LOGE("flushInternal: %lld", renderCache->totalTime);
   }
   //  auto composition = stage->getRootComposition();
   //  if (composition) {

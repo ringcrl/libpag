@@ -20,6 +20,7 @@
 #include "GLCaps.h"
 #include "GLContext.h"
 #include "gpu/opengl/GLSemaphore.h"
+#include "core/Clock.h"
 
 namespace tgfx {
 std::shared_ptr<Surface> Surface::MakeFrom(std::shared_ptr<RenderTarget> renderTarget) {
@@ -45,6 +46,7 @@ std::shared_ptr<Surface> Surface::MakeFrom(std::shared_ptr<Texture> texture, int
 
 std::shared_ptr<Surface> Surface::Make(Context* context, int width, int height, bool alphaOnly,
                                        int sampleCount) {
+    auto start = Clock::Now();
   auto pixelFormat = alphaOnly ? PixelFormat::ALPHA_8 : PixelFormat::RGBA_8888;
   std::shared_ptr<GLTexture> texture;
   if (alphaOnly) {
@@ -66,6 +68,7 @@ std::shared_ptr<Surface> Surface::Make(Context* context, int width, int height, 
   auto surface = new GLSurface(renderTarget, texture);
   // 对于内部创建的 RenderTarget 默认清屏。
   surface->getCanvas()->clear();
+    printf("Surface::Make: %lld\n", Clock::Now() - start);
   return std::shared_ptr<Surface>(surface);
 }
 

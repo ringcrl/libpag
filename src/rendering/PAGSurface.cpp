@@ -196,6 +196,10 @@ bool PAGSurface::draw(RenderCache* cache, std::shared_ptr<Graphic> graphic,
   drawable->setTimeStamp(pagPlayer->getTimeStampInternal());
   drawable->present(context);
   unlockContext();
+    LOGE("fillPathCost: %lld", context->fillPathCost);
+    LOGE("maskMakeCost: %lld", context->maskMakeCost);
+    context->fillPathCost = 0;
+    context->maskMakeCost = 0;
   return true;
 }
 

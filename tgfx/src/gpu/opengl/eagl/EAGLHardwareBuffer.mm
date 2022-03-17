@@ -31,8 +31,8 @@ std::shared_ptr<PixelBuffer> PixelBuffer::MakeFrom(void* hardwareBuffer) {
 
 std::shared_ptr<PixelBuffer> PixelBuffer::MakeHardwareBuffer(int width, int height,
                                                              bool alphaOnly) {
-//  return HardwareBuffer::Make(width, height, alphaOnly);
-    return nullptr;
+  return HardwareBuffer::Make(width, height, alphaOnly);
+//    return nullptr;
 }
 
 std::shared_ptr<Texture> Texture::MakeFrom(Context* context, void* hardwareBuffer) {

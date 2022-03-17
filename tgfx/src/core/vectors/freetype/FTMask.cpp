@@ -20,6 +20,7 @@
 #include "FTPath.h"
 #include "core/Bitmap.h"
 #include FT_STROKER_H
+#include "core/Clock.h"
 
 namespace tgfx {
 static const FTLibrary& GetLibrary() {
@@ -65,6 +66,7 @@ void FTMask::fillPath(const Path& path) {
   if (path.isEmpty()) {
     return;
   }
+    auto start = Clock::Now();
   const auto& info = buffer->info();
   auto finalPath = path;
   auto totalMatrix = matrix;
@@ -73,6 +75,8 @@ void FTMask::fillPath(const Path& path) {
   finalPath.transform(totalMatrix);
   FTPath ftPath = {};
   finalPath.decompose(Iterator, &ftPath);
+    printf("Path.decompose: %lld\n", Clock::Now() - start);
+    start = Clock::Now();
   ftPath.setFillType(path.getFillType());
   auto outlines = ftPath.getOutlines();
   Bitmap bm(buffer);
@@ -87,6 +91,7 @@ void FTMask::fillPath(const Path& path) {
   for (auto& outline : outlines) {
     FT_Outline_Get_Bitmap(ftLibrary, &(outline->outline), &bitmap);
   }
+    printf("FT_Outline_Get_Bitmap: %lld\n", Clock::Now() - start);
 }
 
 void FTMask::clear() {

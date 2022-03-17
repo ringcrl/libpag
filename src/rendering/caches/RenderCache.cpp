@@ -227,6 +227,7 @@ void RenderCache::detachFromContext() {
     context = nullptr;
     return;
   }
+    auto start = tgfx::Clock::Now();
   clearExpiredSequences();
   clearExpiredBitmaps();
   clearExpiredSnapshots();
@@ -234,6 +235,7 @@ void RenderCache::detachFromContext() {
   context->purgeResourcesNotUsedIn(currentTimestamp - lastTimestamp);
   lastTimestamp = currentTimestamp;
   context = nullptr;
+    printf("RenderCache::detachFromContext: %lld\n", tgfx::Clock::Now() - start);
 }
 
 Snapshot* RenderCache::getSnapshot(ID assetID) const {

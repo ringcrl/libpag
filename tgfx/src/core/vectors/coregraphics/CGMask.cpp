@@ -20,6 +20,7 @@
 #include "core/Bitmap.h"
 #include "core/Mask.h"
 #include "platform/apple/BitmapContextUtil.h"
+#include "core/Clock.h"
 
 namespace tgfx {
 static void Iterator(PathVerb verb, const Point points[4], void* info) {
@@ -62,12 +63,15 @@ void CGMask::fillPath(const Path& path) {
   if (path.isEmpty()) {
     return;
   }
+    auto start = Clock::Now();
   const auto& info = buffer->info();
   Bitmap bm(buffer);
   auto cgContext = CreateBitmapContext(info, bm.writablePixels());
   if (cgContext == nullptr) {
     return;
   }
+    printf("CreateBitmapContext: %lld\n", Clock::Now() - start);
+    start = Clock::Now();
 
   auto finalPath = path;
   auto totalMatrix = matrix;
@@ -76,6 +80,8 @@ void CGMask::fillPath(const Path& path) {
   finalPath.transform(totalMatrix);
   auto cgPath = CGPathCreateMutable();
   finalPath.decompose(Iterator, cgPath);
+    printf("Path.decompose: %lld\n", Clock::Now() - start);
+    start = Clock::Now();
 
   CGContextSetShouldAntialias(cgContext, true);
   static const CGFloat white[] = {1.f, 1.f, 1.f, 1.f};
@@ -103,6 +109,7 @@ void CGMask::fillPath(const Path& path) {
 
   CGContextRelease(cgContext);
   CGPathRelease(cgPath);
+    printf("CGContextFillPath: %lld\n", Clock::Now() - start);
 }
 
 void CGMask::clear() {

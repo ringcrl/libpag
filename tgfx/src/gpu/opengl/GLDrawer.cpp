@@ -24,6 +24,7 @@
 #include "core/utils/UniqueID.h"
 #include "gpu/PorterDuffXferProcessor.h"
 #include "gpu/ProgramCache.h"
+#include "core/Clock.h"
 
 namespace tgfx {
 struct AttribLayout {
@@ -172,6 +173,7 @@ void GLDrawer::draw(DrawArgs args, std::unique_ptr<GLDrawOp> op) const {
   if (!isDrawArgsValid(args) || op == nullptr) {
     return;
   }
+    auto start = Clock::Now();
   auto numColorProcessors = args.colors.size();
   std::vector<std::unique_ptr<FragmentProcessor>> fragmentProcessors = {};
   fragmentProcessors.resize(numColorProcessors + args.masks.size());
@@ -240,5 +242,6 @@ void GLDrawer::draw(DrawArgs args, std::unique_ptr<GLDrawOp> op) const {
     gl->bindVertexArray(0);
   }
   CheckGLError(args.context);
+    printf("GLDrawer::draw: %lld\n", Clock::Now() - start);
 }
 }  // namespace tgfx
