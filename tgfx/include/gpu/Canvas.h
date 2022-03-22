@@ -184,6 +184,9 @@ class Canvas {
   virtual void flush() {
   }
 
+  virtual void endDraw() {
+  }
+
  protected:
   Surface* surface = nullptr;
   std::shared_ptr<CanvasState> state = nullptr;

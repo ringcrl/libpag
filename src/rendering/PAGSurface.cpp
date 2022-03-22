@@ -192,6 +192,7 @@ bool PAGSurface::draw(RenderCache* cache, std::shared_ptr<Graphic> graphic,
     surface->flush(&semaphore);
     signalSemaphore->initGL(semaphore.glSync);
   }
+  canvas->endDraw();
   cache->detachFromContext();
   drawable->setTimeStamp(pagPlayer->getTimeStampInternal());
   drawable->present(context);

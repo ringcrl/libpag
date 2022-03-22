@@ -201,7 +201,7 @@ void GLCanvas::fillPath(const Path& path, const Shader* shader) {
   auto width = ceilf(deviceBounds.width());
   auto height = ceilf(deviceBounds.height());
     auto start = Clock::Now();
-  auto mask = Mask::Make(static_cast<int>(width), static_cast<int>(height));
+  auto mask = getMask(static_cast<int>(width), static_cast<int>(height));
   if (!mask) {
     return;
   }
@@ -423,5 +423,29 @@ void GLCanvas::draw(std::unique_ptr<GLDrawOp> op, std::unique_ptr<FragmentProces
   args.renderTargetTexture = surface->getTexture();
   args.aa = aaType;
   drawer->draw(std::move(args), std::move(op));
+}
+
+void GLCanvas::endDraw() {
+  unusedMaskMap = maskMap;
+}
+
+std::shared_ptr<tgfx::Mask> GLCanvas::getMask(int width, int height) {
+  tgfx::BytesKey key;
+  key.write(static_cast<uint32_t>(width));
+  key.write(static_cast<uint32_t>(height));
+  auto iter = unusedMaskMap.find(key);
+  std::shared_ptr<tgfx::Mask> mask;
+  if (iter != unusedMaskMap.end() && !iter->second.empty()) {
+    mask = iter->second.back();
+    mask->clear();
+    iter->second.pop_back();
+  } else {
+    mask = tgfx::Mask::Make(width, height);
+  }
+  if (mask == nullptr) {
+    return nullptr;
+  }
+  maskMap[key].push_back(mask);
+  return mask;
 }
 }  // namespace tgfx

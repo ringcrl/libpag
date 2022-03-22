@@ -37,6 +37,7 @@ class GLCanvas : public Canvas {
                   const Font& font, const Paint& paint) override;
   void drawAtlas(const Texture* atlas, const Matrix matrix[], const Rect tex[],
                  const Color colors[], size_t count) override;
+  void endDraw() override;
 
  protected:
   void onSave() override {
@@ -53,6 +54,10 @@ class GLCanvas : public Canvas {
   std::shared_ptr<Texture> _clipTexture = nullptr;
   uint32_t clipID = kDefaultClipID;
   std::shared_ptr<GLDrawer> _drawer = nullptr;
+  std::unordered_map<BytesKey, std::vector<std::shared_ptr<Mask>>, BytesHasher> unusedMaskMap;
+  std::unordered_map<BytesKey, std::vector<std::shared_ptr<Mask>>, BytesHasher> maskMap;
+
+  std::shared_ptr<Mask> getMask(int width, int height);
 
   GLDrawer* getDrawer();
 
