@@ -23,10 +23,10 @@
 #include "rendering/filters/utils/FilterBuffer.h"
 
 namespace pag {
-class GaussBlurFilter : public LayerFilter {
+class GaussianBlurFilter : public LayerFilter {
  public:
-  explicit GaussBlurFilter(Effect* effect);
-  ~GaussBlurFilter() override;
+  explicit GaussianBlurFilter(Effect* effect);
+  ~GaussianBlurFilter() override;
 
   bool initialize(tgfx::Context* context) override;
 
@@ -38,15 +38,16 @@ class GaussBlurFilter : public LayerFilter {
 
  private:
   Effect* effect = nullptr;
-
-  GaussianBlurFilterPass* upBlurPass = nullptr;
+  
   GaussianBlurFilterPass* downBlurPass = nullptr;
+  GaussianBlurFilterPass* upBlurPass = nullptr;
 
   std::shared_ptr<FilterBuffer> blurFilterBuffer = nullptr;
 
-  bool repeatEdge = true;
-  BlurDirection blurDirection = BlurDirection::Both;
+  BlurOptions options = BlurOptions::None;
   float blurriness = 0.0f;
+  bool repeatEdgePixels = true;
+  Enum blurDimensions = BlurDimensionsDirection::All;
   std::vector<tgfx::Rect> filtersBounds = {};
 };
 }  // namespace pag

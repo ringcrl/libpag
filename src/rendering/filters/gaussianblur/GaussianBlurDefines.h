@@ -18,15 +18,33 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace pag {
 
-enum class GaussianBlurPassOptions : unsigned {
+enum class BlurOptions : unsigned {
   None              = 0,
-  Horizontal        = 1 << 0,
-  Vertical          = 1 << 1,
-  RepeatEdgePixels  = 1 << 2,
-  SpecifiedColor    = 1 << 3,
-  SpecifiedAlpha    = 1 << 4
+  Up                = 1 << 0,
+  Down              = 1 << 1,
+  Horizontal        = 1 << 2,
+  Vertical          = 1 << 3,
+  RepeatEdgePixels  = 1 << 4,
+  SpecifiedColor    = 1 << 5,
+  SpecifiedAlpha    = 1 << 6
 };
+
+BlurOptions operator & (BlurOptions lhs, BlurOptions rhs) {
+  return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) &
+                                  static_cast<std::underlying_type<BlurOptions>::type>(rhs));
+}
+
+BlurOptions operator | (BlurOptions lhs, BlurOptions rhs) {
+  return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) |
+                                  static_cast<std::underlying_type<BlurOptions>::type>(rhs));
+}
+
+BlurOptions operator |= (BlurOptions lhs, BlurOptions rhs) {
+  return lhs | rhs;
+}
 
 }  // namespace pag

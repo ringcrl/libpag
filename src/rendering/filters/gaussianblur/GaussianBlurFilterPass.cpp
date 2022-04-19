@@ -22,7 +22,7 @@
 namespace pag {
 
 
-GaussianBlurFilterPass::GaussianBlurFilterPass(GaussianBlurPassOptions options) : options(options) {
+GaussianBlurFilterPass::GaussianBlurFilterPass(BlurOptions options) : options(options) {
 }
 
 std::string GaussianBlurFilterPass::onBuildFragmentShader() {
@@ -31,6 +31,7 @@ std::string GaussianBlurFilterPass::onBuildFragmentShader() {
 
 void GaussianBlurFilterPass::onPrepareProgram(tgfx::Context* context, unsigned int program) {
   auto gl = tgfx::GLFunctions::Get(context);
+  blurrinessHandle = gl->getUniformLocation(program, "uBlurriness");
   repeatEdgeHandle = gl->getUniformLocation(program, "uRepeatEdge");
   specifiedColorHandle = gl->getUniformLocation(program, "uSpecifiedColor");
 }
@@ -42,28 +43,15 @@ void GaussianBlurFilterPass::updateParams(float blurValue, tgfx::Color blurColor
 
 void GaussianBlurFilterPass::onUpdateParams(tgfx::Context* context, const tgfx::Rect& contentBounds,
                                           const tgfx::Point& filterScale) {
-  auto scale = direction == BlurDirection::Horizontal ? filterScale.x : filterScale.y;
-
-  auto blurValue = std::min(blurriness * scale, BLUR_LIMIT_BLURRINESS);
-  auto blurRadius = blurValue / BLUR_LIMIT_BLURRINESS * (maxRadius - 1.0) + 1.0;
-  auto blurLevel = blurValue / BLUR_LIMIT_BLURRINESS * (maxLevel - 1.0) + 1.0;
   auto gl = tgfx::GLFunctions::Get(context);
-  gl->uniform1f(radiusHandle, blurRadius);
-  gl->uniform2f(levelHandle,
-                blurLevel / static_cast<float>(contentBounds.width()) *
-                    (direction == BlurDirection::Horizontal),
-                blurLevel / static_cast<float>(contentBounds.height()) *
-                    (direction == BlurDirection::Vertical));
-  gl->uniform1f(repeatEdgeHandle, repeatEdge);
-  gl->uniform3f(colorHandle, color.red, color.green, color.blue);
-  gl->uniform1f(colorValidHandle, isColorValid);
-  gl->uniform1f(alphaHandle, alpha);
+  gl->uniform1f(repeatEdgeHandle, (options & BlurOptions::RepeatEdgePixels) != BlurOptions::None);
+  gl->uniform4f(specifiedColorHandle, specifiedColor.red, specifiedColor.green, specifiedColor.blue, specifiedColor.alpha);
 }
 
 std::vector<tgfx::Point> GaussianBlurFilterPass::computeVertices(const tgfx::Rect& inputBounds,
-                                                               const tgfx::Rect& outputBounds,
-                                                               const tgfx::Point& filterScale) {
-  if (repeatEdge) {
+                                                                 const tgfx::Rect& outputBounds,
+                                                                 const tgfx::Point& filterScale) {
+  if ((options & BlurOptions::RepeatEdgePixels) != BlurOptions::None) {
     return LayerFilter::computeVertices(inputBounds, outputBounds, filterScale);
   }
   std::vector<tgfx::Point> vertices = {};

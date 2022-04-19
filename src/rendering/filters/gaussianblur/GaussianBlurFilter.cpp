@@ -16,50 +16,70 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "GaussBlurFilter.h"
+#include "GaussianBlurFilter.h"
 #include "rendering/filters/utils/FilterHelper.h"
 
 namespace pag {
-GaussBlurFilter::GaussBlurFilter(Effect* effect) : effect(effect) {
-  blurFilterV = new SinglePassBlurFilter(BlurDirection::Vertical);
-  blurFilterH = new SinglePassBlurFilter(BlurDirection::Horizontal);
+GaussianBlurFilter::GaussianBlurFilter(Effect* effect) : effect(effect) {
+  auto* blurEffect = static_cast<FastBlurEffect*>(effect);
+  
+  repeatEdgePixels = blurEffect->repeatEdgePixels->getValueAt(0);
+  blurDimensions = blurEffect->blurDimensions->getValueAt(0);
+  
+  BlurOptions options = BlurOptions::None;
+  
+  if (repeatEdgePixels) {
+    options |= BlurOptions::RepeatEdgePixels;
+  }
+  
+  if (blurDimensions == BlurDimensionsDirection::Vertical) {
+    options |= BlurOptions::Vertical;
+  } else if (blurDimensions == BlurDimensionsDirection::Horizontal) {
+    options |= BlurOptions::Horizontal;
+  } else {
+    options |= BlurOptions::Horizontal | BlurOptions::Vertical;
+  }
+  
+  BlurOptions downOptions = options | BlurOptions::Down;
+  BlurOptions upOptions = options | BlurOptions::Up;
+
+  downBlurPass = new GaussianBlurFilterPass(downOptions);
+  upBlurPass = new GaussianBlurFilterPass(upOptions);
 }
 
-GaussBlurFilter::~GaussBlurFilter() {
-  delete blurFilterV;
-  delete blurFilterH;
+GaussianBlurFilter::~GaussianBlurFilter() {
+  delete upBlurPass;
+  delete downBlurPass;
 }
 
-bool GaussBlurFilter::initialize(tgfx::Context* context) {
-  if (!blurFilterV->initialize(context)) {
+bool GaussianBlurFilter::initialize(tgfx::Context* context) {
+  if (!downBlurPass->initialize(context)) {
     return false;
   }
-  if (!blurFilterH->initialize(context)) {
+  if (!upBlurPass->initialize(context)) {
     return false;
   }
   return true;
 }
 
-void GaussBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
+void GaussianBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
                              const tgfx::Rect& transformedBounds, const tgfx::Point& filterScale) {
   LayerFilter::update(frame, contentBounds, transformedBounds, filterScale);
 
-  auto* gaussBlurEffect = static_cast<FastBlurEffect*>(effect);
-  repeatEdge = gaussBlurEffect->repeatEdgePixels->getValueAt(layerFrame);
-  blurDirection =
-      static_cast<BlurDirection>(gaussBlurEffect->blurDimensions->getValueAt(layerFrame));
-  blurriness = gaussBlurEffect->blurriness->getValueAt(layerFrame);
+  auto* blurEffect = static_cast<FastBlurEffect*>(effect);
+  blurriness = blurEffect->blurriness->getValueAt(layerFrame);
   auto expandY = blurriness * filterScale.y;
   filtersBounds.clear();
   filtersBounds.emplace_back(contentBounds);
-  switch (blurDirection) {
-    case BlurDirection::Vertical:
-      blurFilterV->update(frame, contentBounds, transformedBounds, filterScale);
+  switch (blurDimensions) {
+    case BlurDimensionsDirection::Vertical:
+      downBlurPass->update(frame, contentBounds, transformedBounds, filterScale);
+      upBlurPass->update(frame, contentBounds, transformedBounds, filterScale);
       break;
-    case BlurDirection::Horizontal:
+    case BlurDimensionsDirection::Horizontal:
       blurFilterH->update(frame, contentBounds, transformedBounds, filterScale);
       break;
-    case BlurDirection::Both:
+    case BlurDimensionsDirection::All:
       auto blurVBounds = contentBounds;
       if (!repeatEdge) {
         blurVBounds.outset(0, expandY);
@@ -73,7 +93,7 @@ void GaussBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
   filtersBounds.emplace_back(transformedBounds);
 }
 
-void GaussBlurFilter::draw(tgfx::Context* context, const FilterSource* source,
+void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source,
                            const FilterTarget* target) {
   if (source == nullptr || target == nullptr) {
     LOGE("GaussFilter::draw() can not draw filter");

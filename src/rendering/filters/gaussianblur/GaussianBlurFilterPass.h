@@ -24,7 +24,7 @@
 namespace pag {
 class GaussianBlurFilterPass : public LayerFilter {
  public:
-  explicit GaussianBlurFilterPass(GaussianBlurPassOptions options);
+  explicit GaussianBlurFilterPass(BlurOptions options);
   ~GaussianBlurFilterPass() override = default;
 
   void updateParams(float blurValue, tgfx::Color blurColor = tgfx::Color::Transparent());
@@ -47,7 +47,7 @@ class GaussianBlurFilterPass : public LayerFilter {
   int repeatEdgeHandle = -1;
   int specifiedColorHandle = -1;
 
-  GaussianBlurPassOptions options;
+  BlurOptions options;
   float blurriness = 0.0;
   tgfx::Color specifiedColor = tgfx::Color::Transparent();
 };
