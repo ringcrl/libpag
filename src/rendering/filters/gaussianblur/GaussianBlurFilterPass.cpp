@@ -16,7 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "GaussianBlurShader.h"
+#include "GaussianBlurShaders.h"
 #include "GaussianBlurFilterPass.h"
 
 namespace pag {
@@ -45,7 +45,8 @@ void GaussianBlurFilterPass::onUpdateParams(tgfx::Context* context, const tgfx::
                                           const tgfx::Point& filterScale) {
   auto gl = tgfx::GLFunctions::Get(context);
   gl->uniform1f(repeatEdgeHandle, (options & BlurOptions::RepeatEdgePixels) != BlurOptions::None);
-  gl->uniform4f(specifiedColorHandle, specifiedColor.red, specifiedColor.green, specifiedColor.blue, specifiedColor.alpha);
+  gl->uniform4f(specifiedColorHandle, specifiedColor.red, specifiedColor.green, specifiedColor.blue,
+                                      specifiedColor.alpha);
 }
 
 std::vector<tgfx::Point> GaussianBlurFilterPass::computeVertices(const tgfx::Rect& inputBounds,

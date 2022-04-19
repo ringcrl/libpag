@@ -47,7 +47,7 @@ class GaussianBlurFilterPass : public LayerFilter {
   int repeatEdgeHandle = -1;
   int specifiedColorHandle = -1;
 
-  BlurOptions options;
+  BlurOptions options = BlurOptions::None;
   float blurriness = 0.0;
   tgfx::Color specifiedColor = tgfx::Color::Transparent();
 };

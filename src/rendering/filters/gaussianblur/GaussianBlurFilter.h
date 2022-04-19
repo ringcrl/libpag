@@ -43,11 +43,13 @@ class GaussianBlurFilter : public LayerFilter {
   GaussianBlurFilterPass* upBlurPass = nullptr;
 
   std::shared_ptr<FilterBuffer> blurFilterBuffer = nullptr;
+  std::vector<tgfx::Rect> filtersBounds = {};
 
   BlurOptions options = BlurOptions::None;
-  float blurriness = 0.0f;
+  float blurValue = 0;
+  int blurDepth = 0;
   bool repeatEdgePixels = true;
-  Enum blurDimensions = BlurDimensionsDirection::All;
-  std::vector<tgfx::Rect> filtersBounds = {};
+  
+  void updateBlurParam(float blurriness);
 };
 }  // namespace pag

@@ -22,6 +22,10 @@
 
 namespace pag {
 
+#define BLUR_LEVEL_LIGHT  20
+#define BLUR_LEVEL_MEDIUM 80
+#define BLUR_LEVEL_HEAVY  300
+
 enum class BlurOptions : unsigned {
   None              = 0,
   Up                = 1 << 0,
