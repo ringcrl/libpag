@@ -22,9 +22,21 @@
 
 namespace pag {
 
-#define BLUR_LEVEL_LIGHT  20
-#define BLUR_LEVEL_MEDIUM 80
-#define BLUR_LEVEL_HEAVY  300
+#define BLUR_MODE_GRADUALLY_SCALE_LIMIT 40
+#define BLUR_MODE_MUTI_PASS_SCALE_LIMIT 300
+
+enum class BlurMode : unsigned {
+  None            = 0,
+  GraduallyScale  = 1,
+  MutiPassScale   = 2
+};
+
+struct BlurParam {
+  BlurMode blurMode = BlurMode::None;
+  float blurValue = 0;
+  int blurDepth = 0;
+  bool repeatEdgePixels = true;
+};
 
 enum class BlurOptions : unsigned {
   None              = 0,
@@ -37,18 +49,19 @@ enum class BlurOptions : unsigned {
   SpecifiedAlpha    = 1 << 6
 };
 
-BlurOptions operator & (BlurOptions lhs, BlurOptions rhs) {
+BlurOptions operator&(BlurOptions lhs, BlurOptions rhs) {
   return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) &
                                   static_cast<std::underlying_type<BlurOptions>::type>(rhs));
 }
 
-BlurOptions operator | (BlurOptions lhs, BlurOptions rhs) {
+BlurOptions operator|(BlurOptions lhs, BlurOptions rhs) {
   return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) |
                                   static_cast<std::underlying_type<BlurOptions>::type>(rhs));
 }
 
-BlurOptions operator |= (BlurOptions lhs, BlurOptions rhs) {
-  return lhs | rhs;
+BlurOptions& operator|=(BlurOptions& lhs, BlurOptions rhs) {
+  lhs = lhs | rhs;
+  return lhs;
 }
 
 }  // namespace pag

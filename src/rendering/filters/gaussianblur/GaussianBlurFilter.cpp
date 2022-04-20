@@ -23,12 +23,12 @@ namespace pag {
 GaussianBlurFilter::GaussianBlurFilter(Effect* effect) : effect(effect) {
   auto* blurEffect = static_cast<FastBlurEffect*>(effect);
   
-  repeatEdgePixels = blurEffect->repeatEdgePixels->getValueAt(0);
+  blurParam.repeatEdgePixels = blurEffect->repeatEdgePixels->getValueAt(0);
   auto blurDimensions = blurEffect->blurDimensions->getValueAt(0);
   
   BlurOptions options = BlurOptions::None;
   
-  if (repeatEdgePixels) {
+  if (blurParam.repeatEdgePixels) {
     options |= BlurOptions::RepeatEdgePixels;
   }
   
@@ -63,14 +63,16 @@ bool GaussianBlurFilter::initialize(tgfx::Context* context) {
 }
 
 void GaussianBlurFilter::updateBlurParam(float blurriness) {
-  blurriness = blurriness < BLUR_LEVEL_HEAVY ? blurriness : BLUR_LEVEL_HEAVY;
-  
-  if (blurriness < BLUR_LEVEL_LIGHT) {
-    blurDepth = 0;
-  } else if (blurriness < BLUR_LEVEL_MEDIUM) {
-    blurDepth = 1;
+  blurriness = blurriness < BLUR_MODE_MUTI_PASS_SCALE_LIMIT ?
+               blurriness : BLUR_MODE_MUTI_PASS_SCALE_LIMIT;
+  if (blurriness < BLUR_MODE_GRADUALLY_SCALE_LIMIT) {
+    blurParam.blurMode = BlurMode::GraduallyScale;
+    blurParam.blurDepth = 1;
+    blurParam.blurValue = blurriness;
   } else {
-    blurDepth = 2;
+    blurParam.blurMode = BlurMode::MutiPassScale;
+    blurParam.blurDepth = 2;
+    blurParam.blurValue = blurriness;
   }
 }
 
@@ -83,7 +85,7 @@ void GaussianBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
   updateBlurParam(blurriness);
 
   tgfx::Rect expendBounds = {0, 0, 0, 0};
-  if (!repeatEdgePixels) {
+  if (!blurParam.repeatEdgePixels) {
     expendBounds.setWH(blurriness * filterScale.x, blurriness * filterScale.y);
   }
   filtersBounds.clear();

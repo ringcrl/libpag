@@ -45,10 +45,7 @@ class GaussianBlurFilter : public LayerFilter {
   std::shared_ptr<FilterBuffer> blurFilterBuffer = nullptr;
   std::vector<tgfx::Rect> filtersBounds = {};
 
-  BlurOptions options = BlurOptions::None;
-  float blurValue = 0;
-  int blurDepth = 0;
-  bool repeatEdgePixels = true;
+  BlurParam blurParam = {};
   
   void updateBlurParam(float blurriness);
 };
