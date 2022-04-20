@@ -32,9 +32,10 @@ enum class BlurMode : unsigned {
 };
 
 struct BlurParam {
-  BlurMode blurMode = BlurMode::None;
-  float blurValue = 0;
-  int blurDepth = 0;
+  BlurMode mode = BlurMode::None;
+  int depth = 0;
+  float value = 0.0;
+  float scale = 0.0;
   bool repeatEdgePixels = true;
 };
 

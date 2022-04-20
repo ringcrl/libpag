@@ -39,12 +39,9 @@ GaussianBlurFilter::GaussianBlurFilter(Effect* effect) : effect(effect) {
   } else {
     options |= BlurOptions::Horizontal | BlurOptions::Vertical;
   }
-  
-  BlurOptions downOptions = options | BlurOptions::Down;
-  BlurOptions upOptions = options | BlurOptions::Up;
 
-  downBlurPass = new GaussianBlurFilterPass(downOptions);
-  upBlurPass = new GaussianBlurFilterPass(upOptions);
+  downBlurPass = new GaussianBlurFilterPass(options | BlurOptions::Down);
+  upBlurPass = new GaussianBlurFilterPass(options | BlurOptions::Up);
 }
 
 GaussianBlurFilter::~GaussianBlurFilter() {
@@ -66,13 +63,15 @@ void GaussianBlurFilter::updateBlurParam(float blurriness) {
   blurriness = blurriness < BLUR_MODE_MUTI_PASS_SCALE_LIMIT ?
                blurriness : BLUR_MODE_MUTI_PASS_SCALE_LIMIT;
   if (blurriness < BLUR_MODE_GRADUALLY_SCALE_LIMIT) {
-    blurParam.blurMode = BlurMode::GraduallyScale;
-    blurParam.blurDepth = 1;
-    blurParam.blurValue = blurriness;
+    blurParam.mode = BlurMode::GraduallyScale;
+    blurParam.depth = 1;
+    blurParam.value = blurriness;
+    blurParam.scale = 1.0 - blurriness / 100.0;
   } else {
-    blurParam.blurMode = BlurMode::MutiPassScale;
-    blurParam.blurDepth = 2;
-    blurParam.blurValue = blurriness;
+    blurParam.mode = BlurMode::MutiPassScale;
+    blurParam.depth = 2;
+    blurParam.value = blurriness;
+    blurParam.scale = 0.5;
   }
 }
 
@@ -91,13 +90,14 @@ void GaussianBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
   filtersBounds.clear();
   filtersBounds.emplace_back(contentBounds);
   
+  
   filtersBounds.emplace_back(transformedBounds);
 }
 
 void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source,
                            const FilterTarget* target) {
   if (source == nullptr || target == nullptr) {
-    LOGE("GaussFilter::draw() can not draw filter");
+    LOGE("GaussianBlurFilter::draw() can not draw filter");
     return;
   }
   blurFilterV->updateParams(blurriness, 1.0, repeatEdge, BlurMode::Picture);
