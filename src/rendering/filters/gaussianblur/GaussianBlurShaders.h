@@ -19,59 +19,40 @@
 #pragma once
 
 namespace pag {
-static const char BLUR_FRAGMENT_SHADER[] = R"(
+static const char BLUR_DOWN_FRAGMENT_SHADER[] = R"(
     #version 100
     precision highp float;
-    uniform sampler2D uTextureInput;
-    uniform float uRadius;
-    uniform vec2 uLevel;
-    uniform float uRepeatEdge;
-
-    uniform vec3 uColor;
-    uniform float uColorValid;
-    uniform float uAlpha;
-
+    
     varying vec2 vertexColor;
-
-    float maxEdge = -999.0;
-    float edge = 0.005;
-
-    float Curve (float value) {
-        value = value * 2.0 - 1.0;
-        return dot(vec3(-value, 2.0, 1.0),vec3(abs(value), value, 1.0)) * 0.5;
-    }
+    uniform sampler2D uTextureInput;
+    
+    uniform float uBlurriness;
+    uniform float uRepeatEdge;
+    uniform vec4 uSpecifiedColor;
 
     void main()
     {
-        vec4 color = vec4(0.0);
-        vec4 sum = vec4(0.0);
+        vec4 sum = texture2D(texture, uv) * 4.0;
+        sum += texture2D(texture, uv - halfpixel.xy * offset);
+        sum += texture2D(texture, uv + halfpixel.xy * offset);
+        sum += texture2D(texture, uv + vec2(halfpixel.x, -halfpixel.y) * offset);
+        sum += texture2D(texture, uv - vec2(halfpixel.x, -halfpixel.y) * offset);
 
-        float divisor = 0.0;
-        float weight = 0.0;
-        
-        vec2 point = vec2(0.0);
-        vec2 isVaild = vec2(0.0);
-
-        float radiusMultiplier = 1.0 / uRadius;
-
-        for (float i = 0.0; i < 1000.0; i++)
-        {
-            float value = i - uRadius;
-            if (value > uRadius) {
-                break;
-            }
-            point = vertexColor + value * uLevel;
-            vec2 target = clamp(point, edge + maxEdge * (1.0 - uRepeatEdge), 1.0 - edge + (1.0 - maxEdge) * (1.0 - uRepeatEdge));
-            color = texture2D(uTextureInput, target);
-            isVaild = abs(step(vec2(1.0), point) - vec2(1.0)) * step(vec2(0.0), point);
-            color *= step(1.0, isVaild.x * isVaild.y + uRepeatEdge);
-            weight = Curve(1.0 - (abs(value) * radiusMultiplier));
-            sum += color * weight;
-            divisor += weight;
-        }
-
-        color = sum / divisor;
-        gl_FragColor = vec4(mix(color.rgb, uColor * color.a, uColorValid), color.a) * uAlpha;
+        vec4 color = sum / 8.0;
+    
+        //BLUR_SPECIFIED_COLOR_RGB
+        //BLUR_SPECIFIED_COLOR_ALPHA
+    
+        gl_FragColor = color;
     }
     )";
+
+static const char BLUR_SPECIFIED_COLOR_RGB[] = R"(
+        color.rgb = uSpecifiedColor.rgb;
+    )";
+
+static const char BLUR_SPECIFIED_COLOR_ALPHA[] = R"(
+        color.a *= uSpecifiedColor.a;
+    )";
+
 }  // namespace pag
