@@ -42,8 +42,10 @@ class GaussianBlurFilter : public LayerFilter {
   GaussianBlurFilterPass* downBlurPass = nullptr;
   GaussianBlurFilterPass* upBlurPass = nullptr;
 
-  std::shared_ptr<FilterBuffer> blurFilterBuffer = nullptr;
+  std::shared_ptr<FilterBuffer> blurFilterBuffer[BLUR_DEPTH_MAX] = {};
   std::vector<tgfx::Rect> filtersBounds = {};
+  Frame currentFrame = {};
+  tgfx::Point filtersBoundsScale = {};
 
   BlurParam blurParam = {};
   

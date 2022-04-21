@@ -22,20 +22,31 @@
 
 namespace pag {
 
-#define BLUR_MODE_GRADUALLY_SCALE_LIMIT 40
-#define BLUR_MODE_MUTI_PASS_SCALE_LIMIT 300
+#define BLUR_MODE_ONE_PASS_LIMIT  40
+#define BLUR_MODE_TWO_PASS_LIMIT  120
+#define BLUR_MODE_FOUR_PASS_LIMIT 300
 
 enum class BlurMode : unsigned {
-  None            = 0,
-  GraduallyScale  = 1,
-  MutiPassScale   = 2
+  None      = 0,
+  OnePass   = 1,
+  TwoPass   = 2,
+  FourPass  = 3
 };
+
+#define BLUR_DEPTH_ONE_PASS  0
+#define BLUR_DEPTH_TWO_PASS  1
+#define BLUR_DEPTH_FOUR_PASS 2
+#define BLUR_DEPTH_MAX BLUR_DEPTH_FOUR_PASS
+
+#define BLUR_SCALE_ONE_PASS  1.0
+#define BLUR_SCALE_TWO_PASS  0.7
+#define BLUR_SCALE_FOUR_PASS 0.5
 
 struct BlurParam {
   BlurMode mode = BlurMode::None;
-  int depth = 0;
+  int depth = BLUR_DEPTH_ONE_PASS;
+  float scale = BLUR_SCALE_ONE_PASS;
   float value = 0.0;
-  float scale = 0.0;
   bool repeatEdgePixels = true;
 };
 

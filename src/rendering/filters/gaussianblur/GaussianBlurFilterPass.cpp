@@ -61,18 +61,18 @@ std::vector<tgfx::Point> GaussianBlurFilterPass::computeVertices(const tgfx::Rec
                                  {outputBounds.left, outputBounds.top},
                                  {outputBounds.right, outputBounds.top}};
 
-  auto deltaX = direction == BlurDirection::Horizontal ? -blurriness * filterScale.x : 0;
-  auto deltaY = direction == BlurDirection::Vertical ? -blurriness * filterScale.y : 0;
+//  auto deltaX = direction == BlurDirection::Horizontal ? -blurriness * filterScale.x : 0;
+//  auto deltaY = direction == BlurDirection::Vertical ? -blurriness * filterScale.y : 0;
 
-  tgfx::Point texturePoints[4] = {
-      {deltaX, (outputBounds.height() + deltaY)},
-      {(outputBounds.width() + deltaX), (outputBounds.height() + deltaY)},
-      {deltaX, deltaY},
-      {(outputBounds.width() + deltaX), deltaY}};
-  for (int ii = 0; ii < 4; ii++) {
-    vertices.push_back(contentPoint[ii]);
-    vertices.push_back(texturePoints[ii]);
-  }
+//  tgfx::Point texturePoints[4] = {
+//      {deltaX, (outputBounds.height() + deltaY)},
+//      {(outputBounds.width() + deltaX), (outputBounds.height() + deltaY)},
+//      {deltaX, deltaY},
+//      {(outputBounds.width() + deltaX), deltaY}};
+//  for (int ii = 0; ii < 4; ii++) {
+//    vertices.push_back(contentPoint[ii]);
+//    vertices.push_back(texturePoints[ii]);
+//  }
   return vertices;
 }
 }  // namespace pag
