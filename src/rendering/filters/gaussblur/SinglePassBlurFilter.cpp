@@ -94,16 +94,16 @@ void SinglePassBlurFilter::onPrepareProgram(tgfx::Context* context, unsigned int
 }
 
 void SinglePassBlurFilter::updateParams(float blurrinessValue, float blurAlphaValue,
-                                        bool repeatEdgeValue, BlurMode mode) {
+                                        bool repeatEdgeValue, BlurDrawMode mode) {
   blurriness = blurrinessValue;
   alpha = blurAlphaValue;
   repeatEdge = repeatEdgeValue;
   switch (mode) {
-    case BlurMode::Picture:
+    case BlurDrawMode::Picture:
       this->maxRadius = BLUR_MODE_PIC_MAX_RADIUS;
       this->maxLevel = BLUR_MODE_PIC_MAX_LEVEL;
       break;
-    case BlurMode::Shadow:
+    case BlurDrawMode::Shadow:
       this->maxRadius = BLUR_MODE_SHADOW_MAX_RADIUS;
       this->maxLevel = BLUR_MODE_SHADOW_MAX_LEVEL;
       break;

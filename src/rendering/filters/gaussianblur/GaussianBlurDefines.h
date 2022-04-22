@@ -60,17 +60,17 @@ enum class BlurOptions : unsigned {
   RepeatEdgePixels  = 1 << 4
 };
 
-BlurOptions operator&(BlurOptions lhs, BlurOptions rhs) {
+inline BlurOptions operator&(BlurOptions lhs, BlurOptions rhs) {
   return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) &
                                   static_cast<std::underlying_type<BlurOptions>::type>(rhs));
 }
 
-BlurOptions operator|(BlurOptions lhs, BlurOptions rhs) {
+inline BlurOptions operator|(BlurOptions lhs, BlurOptions rhs) {
   return static_cast<BlurOptions>(static_cast<std::underlying_type<BlurOptions>::type>(lhs) |
                                   static_cast<std::underlying_type<BlurOptions>::type>(rhs));
 }
 
-BlurOptions& operator|=(BlurOptions& lhs, BlurOptions rhs) {
+inline BlurOptions& operator|=(BlurOptions& lhs, BlurOptions rhs) {
   lhs = lhs | rhs;
   return lhs;
 }

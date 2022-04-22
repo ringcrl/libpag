@@ -183,14 +183,14 @@ void DropShadowFilter::onDrawModeNotSpread(tgfx::Context* context, const FilterS
                               (contentBounds.top - filterBounds.top) * source->scale.y);
   auto targetV = blurFilterBuffer->toFilterTarget(offsetMatrix);
 
-  blurFilterV->updateParams(blurSize, 1.0, false, BlurMode::Shadow);
+  blurFilterV->updateParams(blurSize, 1.0, false, BlurDrawMode::Shadow);
   blurFilterV->enableBlurColor(color);
   blurFilterV->draw(context, source, targetV.get());
   blurFilterV->disableBlurColor();
 
   auto sourceH = blurFilterBuffer->toFilterSource(source->scale);
 
-  blurFilterH->updateParams(blurSize, alpha, false, BlurMode::Shadow);
+  blurFilterH->updateParams(blurSize, alpha, false, BlurDrawMode::Shadow);
   tgfx::Matrix revertMatrix =
       tgfx::Matrix::MakeTrans((filterBounds.left - contentBounds.left) * source->scale.x,
                               (filterBounds.top - contentBounds.top) * source->scale.y);
@@ -241,7 +241,7 @@ void DropShadowFilter::onDrawModeNotFullSpread(tgfx::Context* context, const Fil
   offsetMatrix = tgfx::Matrix::MakeTrans((lastBounds.left - filterBounds.left) * source->scale.x,
                                          (lastBounds.top - filterBounds.top) * source->scale.y);
   auto targetV = blurFilterBuffer->toFilterTarget(offsetMatrix);
-  blurFilterV->updateParams(blurSize, 1.0, false, BlurMode::Shadow);
+  blurFilterV->updateParams(blurSize, 1.0, false, BlurDrawMode::Shadow);
   blurFilterV->draw(context, sourceV.get(), targetV.get());
 
   auto sourceH = blurFilterBuffer->toFilterSource(source->scale);
@@ -250,7 +250,7 @@ void DropShadowFilter::onDrawModeNotFullSpread(tgfx::Context* context, const Fil
                               (filterBounds.top - contentBounds.top) * source->scale.y);
   auto targetH = *target;
   PreConcatMatrix(&targetH, revertMatrix);
-  blurFilterH->updateParams(blurSize, alpha, false, BlurMode::Shadow);
+  blurFilterH->updateParams(blurSize, alpha, false, BlurDrawMode::Shadow);
   blurFilterH->draw(context, sourceH.get(), &targetH);
 }
 

@@ -81,15 +81,15 @@ void GaussBlurFilter::draw(tgfx::Context* context, const FilterSource* source,
   }
   switch (blurDirection) {
     case BlurDirection::Vertical:
-      blurFilterV->updateParams(blurriness, 1.0, repeatEdge, BlurMode::Picture);
+      blurFilterV->updateParams(blurriness, 1.0, repeatEdge, BlurDrawMode::Picture);
       blurFilterV->draw(context, source, target);
       break;
     case BlurDirection::Horizontal:
-      blurFilterH->updateParams(blurriness, 1.0, repeatEdge, BlurMode::Picture);
+      blurFilterH->updateParams(blurriness, 1.0, repeatEdge, BlurDrawMode::Picture);
       blurFilterH->draw(context, source, target);
       break;
     case BlurDirection::Both:
-      blurFilterV->updateParams(blurriness, 1.0, repeatEdge, BlurMode::Picture);
+      blurFilterV->updateParams(blurriness, 1.0, repeatEdge, BlurDrawMode::Picture);
       auto contentBounds = filtersBounds[0];
       auto blurVBounds = filtersBounds[1];
       auto targetWidth = static_cast<int>(ceilf(blurVBounds.width() * source->scale.x));
@@ -110,7 +110,7 @@ void GaussBlurFilter::draw(tgfx::Context* context, const FilterSource* source,
       blurFilterV->draw(context, source, targetV.get());
 
       auto sourceH = blurFilterBuffer->toFilterSource(source->scale);
-      blurFilterH->updateParams(blurriness, 1.0f, repeatEdge, BlurMode::Picture);
+      blurFilterH->updateParams(blurriness, 1.0f, repeatEdge, BlurDrawMode::Picture);
       tgfx::Matrix revertMatrix =
           tgfx::Matrix::MakeTrans((blurVBounds.left - contentBounds.left) * source->scale.x,
                                   (blurVBounds.top - contentBounds.top) * source->scale.y);

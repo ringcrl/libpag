@@ -28,7 +28,7 @@ namespace pag {
 #define DROPSHADOW_MAX_SPREAD_SIZE (25.0f)
 #define DROPSHADOW_SPREAD_MIN_THICK_SIZE (12.0f)
 
-enum class BlurMode {
+enum class BlurDrawMode {
   Picture = 0,
   Shadow = 1,
 };

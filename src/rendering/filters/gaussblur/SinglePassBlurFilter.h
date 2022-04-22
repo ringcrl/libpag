@@ -27,7 +27,7 @@ class SinglePassBlurFilter : public LayerFilter {
   explicit SinglePassBlurFilter(BlurDirection blurDirection);
   ~SinglePassBlurFilter() override = default;
 
-  void updateParams(float blurriness, float alpha, bool repeatEdge, BlurMode mode);
+  void updateParams(float blurriness, float alpha, bool repeatEdge, BlurDrawMode mode);
 
   void enableBlurColor(tgfx::Color blurColor);
   void disableBlurColor();
