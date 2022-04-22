@@ -28,7 +28,6 @@ static const char BLUR_DOWN_FRAGMENT_SHADER[] = R"(
     
     uniform float uBlurriness;
     uniform float uRepeatEdge;
-    uniform vec4 uSpecifiedColor;
 
     void main()
     {
@@ -40,19 +39,8 @@ static const char BLUR_DOWN_FRAGMENT_SHADER[] = R"(
 
         vec4 color = sum / 8.0;
     
-        //BLUR_SPECIFIED_COLOR_RGB
-        //BLUR_SPECIFIED_COLOR_ALPHA
-    
         gl_FragColor = color;
     }
-    )";
-
-static const char BLUR_SPECIFIED_COLOR_RGB[] = R"(
-        color.rgb = uSpecifiedColor.rgb;
-    )";
-
-static const char BLUR_SPECIFIED_COLOR_ALPHA[] = R"(
-        color.a *= uSpecifiedColor.a;
     )";
 
 }  // namespace pag

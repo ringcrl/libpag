@@ -22,30 +22,31 @@
 
 namespace pag {
 
-#define BLUR_MODE_ONE_PASS_LIMIT  40
-#define BLUR_MODE_TWO_PASS_LIMIT  120
-#define BLUR_MODE_FOUR_PASS_LIMIT 300
+#define BLUR_MODE_NO_SCALE_TWO_PASS_LIMIT  40
+#define BLUR_MODE_SCALE_TWO_PASS_LIMIT     120
+#define BLUR_MODE_SCALE_FOUR_PASS_LIMIT    300
 
 enum class BlurMode : unsigned {
-  None      = 0,
-  OnePass   = 1,
-  TwoPass   = 2,
-  FourPass  = 3
+  None            = 0,
+  NoScaleTwoPass  = 1,
+  ScaleTwoPass    = 2,
+  ScaleFourPass   = 3
 };
 
-#define BLUR_DEPTH_ONE_PASS  0
-#define BLUR_DEPTH_TWO_PASS  1
-#define BLUR_DEPTH_FOUR_PASS 2
-#define BLUR_DEPTH_MAX BLUR_DEPTH_FOUR_PASS
+#define BLUR_DEPTH_NO_SCALE_TWO_PASS  0
+#define BLUR_DEPTH_SCALE_TWO_PASS     1
+#define BLUR_DEPTH_SCALE_FOUR_PASS    2
 
-#define BLUR_SCALE_ONE_PASS  1.0
-#define BLUR_SCALE_TWO_PASS  0.7
-#define BLUR_SCALE_FOUR_PASS 0.5
+#define BLUR_DEPTH_MAX BLUR_DEPTH_SCALE_FOUR_PASS
+
+#define BLUR_NO_SCALE_TWO_PASS  1.0
+#define BLUR_SCALE_TWO_PASS     0.7
+#define BLUR_SCALE_FOUR_PASS    0.5
 
 struct BlurParam {
   BlurMode mode = BlurMode::None;
-  int depth = BLUR_DEPTH_ONE_PASS;
-  float scale = BLUR_SCALE_ONE_PASS;
+  int depth = BLUR_DEPTH_NO_SCALE_TWO_PASS;
+  float scale = BLUR_NO_SCALE_TWO_PASS;
   float value = 0.0;
   bool repeatEdgePixels = true;
 };
@@ -56,9 +57,7 @@ enum class BlurOptions : unsigned {
   Down              = 1 << 1,
   Horizontal        = 1 << 2,
   Vertical          = 1 << 3,
-  RepeatEdgePixels  = 1 << 4,
-  SpecifiedColor    = 1 << 5,
-  SpecifiedAlpha    = 1 << 6
+  RepeatEdgePixels  = 1 << 4
 };
 
 BlurOptions operator&(BlurOptions lhs, BlurOptions rhs) {

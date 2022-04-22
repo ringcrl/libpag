@@ -60,21 +60,21 @@ bool GaussianBlurFilter::initialize(tgfx::Context* context) {
 }
 
 void GaussianBlurFilter::updateBlurParam(float blurriness) {
-  blurriness = blurriness < BLUR_MODE_FOUR_PASS_LIMIT ?
-               blurriness : BLUR_MODE_FOUR_PASS_LIMIT;
-  if (blurriness < BLUR_MODE_ONE_PASS_LIMIT) {
-    blurParam.mode = BlurMode::OnePass;
-    blurParam.depth = BLUR_DEPTH_ONE_PASS;
-    blurParam.scale = BLUR_SCALE_ONE_PASS;
+  blurriness = blurriness < BLUR_MODE_SCALE_FOUR_PASS_LIMIT ?
+               blurriness : BLUR_MODE_SCALE_FOUR_PASS_LIMIT;
+  if (blurriness < BLUR_MODE_NO_SCALE_TWO_PASS_LIMIT) {
+    blurParam.mode = BlurMode::NoScaleTwoPass;
+    blurParam.depth = BLUR_DEPTH_NO_SCALE_TWO_PASS;
+    blurParam.scale = BLUR_NO_SCALE_TWO_PASS;
     blurParam.value = blurriness;
-  } else if (blurriness < BLUR_MODE_TWO_PASS_LIMIT) {
-    blurParam.mode = BlurMode::TwoPass;
-    blurParam.depth = BLUR_DEPTH_TWO_PASS;
+  } else if (blurriness < BLUR_MODE_SCALE_TWO_PASS_LIMIT) {
+    blurParam.mode = BlurMode::ScaleTwoPass;
+    blurParam.depth = BLUR_DEPTH_SCALE_TWO_PASS;
     blurParam.scale = BLUR_SCALE_TWO_PASS;
     blurParam.value = blurriness;
   } else {
-    blurParam.mode = BlurMode::FourPass;
-    blurParam.depth = BLUR_DEPTH_FOUR_PASS;
+    blurParam.mode = BlurMode::ScaleFourPass;
+    blurParam.depth = BLUR_DEPTH_SCALE_FOUR_PASS;
     blurParam.scale = BLUR_SCALE_FOUR_PASS;
     blurParam.value = blurriness;
   }
