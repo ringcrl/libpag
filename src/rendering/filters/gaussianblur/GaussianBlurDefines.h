@@ -33,11 +33,10 @@ enum class BlurMode : unsigned {
   ScaleFourPass   = 3
 };
 
-#define BLUR_DEPTH_NO_SCALE_TWO_PASS  0
-#define BLUR_DEPTH_SCALE_TWO_PASS     1
-#define BLUR_DEPTH_SCALE_FOUR_PASS    2
+#define BLUR_DEPTH_TWO_PASS   1
+#define BLUR_DEPTH_FOUR_PASS  2
 
-#define BLUR_DEPTH_MAX BLUR_DEPTH_SCALE_FOUR_PASS
+#define BLUR_DEPTH_MAX BLUR_DEPTH_FOUR_PASS
 
 #define BLUR_NO_SCALE_TWO_PASS  1.0
 #define BLUR_SCALE_TWO_PASS     0.7
@@ -45,7 +44,7 @@ enum class BlurMode : unsigned {
 
 struct BlurParam {
   BlurMode mode = BlurMode::None;
-  int depth = BLUR_DEPTH_NO_SCALE_TWO_PASS;
+  int depth = BLUR_DEPTH_TWO_PASS;
   float scale = BLUR_NO_SCALE_TWO_PASS;
   float value = 0.0;
   bool repeatEdgePixels = true;

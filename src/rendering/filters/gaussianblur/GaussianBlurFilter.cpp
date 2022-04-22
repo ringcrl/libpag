@@ -56,6 +56,7 @@ bool GaussianBlurFilter::initialize(tgfx::Context* context) {
   if (!upBlurPass->initialize(context)) {
     return false;
   }
+  
   return true;
 }
 
@@ -64,17 +65,17 @@ void GaussianBlurFilter::updateBlurParam(float blurriness) {
                blurriness : BLUR_MODE_SCALE_FOUR_PASS_LIMIT;
   if (blurriness < BLUR_MODE_NO_SCALE_TWO_PASS_LIMIT) {
     blurParam.mode = BlurMode::NoScaleTwoPass;
-    blurParam.depth = BLUR_DEPTH_NO_SCALE_TWO_PASS;
+    blurParam.depth = BLUR_DEPTH_TWO_PASS;
     blurParam.scale = BLUR_NO_SCALE_TWO_PASS;
     blurParam.value = blurriness;
   } else if (blurriness < BLUR_MODE_SCALE_TWO_PASS_LIMIT) {
     blurParam.mode = BlurMode::ScaleTwoPass;
-    blurParam.depth = BLUR_DEPTH_SCALE_TWO_PASS;
+    blurParam.depth = BLUR_DEPTH_TWO_PASS;
     blurParam.scale = BLUR_SCALE_TWO_PASS;
     blurParam.value = blurriness;
   } else {
     blurParam.mode = BlurMode::ScaleFourPass;
-    blurParam.depth = BLUR_DEPTH_SCALE_FOUR_PASS;
+    blurParam.depth = BLUR_DEPTH_FOUR_PASS;
     blurParam.scale = BLUR_SCALE_FOUR_PASS;
     blurParam.value = blurriness;
   }
@@ -107,6 +108,9 @@ void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source
     return;
   }
   
+  std::unique_ptr<FilterSource> filterSourcePtr;
+  std::unique_ptr<FilterTarget> filterTargetPtr;
+  
   auto filterSource = source;
   auto filterTarget = target;
   
@@ -124,28 +128,42 @@ void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source
       return;
     }
     filterBuffer->clearColor();
-    filterTarget = filterBuffer->toFilterTarget(tgfx::Matrix::I()).get();
+    auto offsetMatrix =
+        tgfx::Matrix::MakeTrans((sourceBounds.left - targetBounds.left) * source->scale.x,
+                                (sourceBounds.top - targetBounds.top) * source->scale.y);
+    filterTargetPtr = filterBuffer->toFilterTarget(offsetMatrix);
+    filterTarget = filterTargetPtr.get();
     downBlurPass->update(currentFrame, sourceBounds, targetBounds, filtersBoundsScale);
     downBlurPass->updateParams(blurParam.value);
     downBlurPass->draw(context, filterSource, filterTarget);
-    filterSource = filterBuffer->toFilterSource(source->scale).get();
+    filterSourcePtr = filterBuffer->toFilterSource(source->scale);
+    filterSource = filterSourcePtr.get();
   }
-  
-  for (int i = blurParam.depth - 1; i > 0; i ++) {
+    
+  for (int i = blurParam.depth - 1; i >= 0; i ++) {
     auto sourceBounds = filtersBounds[filtersBounds.size() - 2];
     auto targetBounds = filtersBounds[filtersBounds.size() - 1];
     auto filterBuffer = blurFilterBuffer[i - 1];
+    if (filterBuffer == nullptr) {
+      return;
+    }
     if (i == 0) {
       filterTarget = target;
     } else {
       filterBuffer->clearColor();
-      filterTarget = filterBuffer->toFilterTarget(tgfx::Matrix::I()).get();
+      auto offsetMatrix =
+          tgfx::Matrix::MakeTrans((sourceBounds.left - targetBounds.left) * source->scale.x,
+                                  (sourceBounds.top - targetBounds.top) * source->scale.y);
+      filterTargetPtr = filterBuffer->toFilterTarget(offsetMatrix);
+      filterTarget = filterTargetPtr.get();
+
     }
     upBlurPass->update(currentFrame, sourceBounds, targetBounds, filtersBoundsScale);
     upBlurPass->updateParams(blurParam.value);
     upBlurPass->draw(context, filterSource, filterTarget);
     if (i != 0) {
-      filterSource = filterBuffer->toFilterSource(source->scale).get();
+      filterSourcePtr = filterBuffer->toFilterSource(source->scale);
+      filterSource = filterSourcePtr.get();
     }
   }
 }
