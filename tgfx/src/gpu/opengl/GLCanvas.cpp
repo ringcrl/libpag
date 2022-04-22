@@ -29,6 +29,7 @@
 #include "gpu/ColorShader.h"
 #include "gpu/TextureFragmentProcessor.h"
 #include "gpu/TextureMaskFragmentProcessor.h"
+#include "gpu/opengl/TriangulatingPathOp.h"
 
 namespace tgfx {
 GLCanvas::GLCanvas(Surface* surface) : Canvas(surface) {
@@ -194,21 +195,29 @@ void GLCanvas::fillPath(const Path& path, const Shader* shader) {
     draw(std::move(op), shader->asFragmentProcessor(args));
     return;
   }
-  auto deviceBounds = state->matrix.mapRect(localBounds);
-  auto width = ceilf(deviceBounds.width());
-  auto height = ceilf(deviceBounds.height());
-  auto mask = Mask::Make(static_cast<int>(width), static_cast<int>(height));
-  if (!mask) {
-    return;
-  }
-  auto totalMatrix = state->matrix;
-  auto matrix = Matrix::MakeTrans(-deviceBounds.x(), -deviceBounds.y());
-  matrix.postScale(width / deviceBounds.width(), height / deviceBounds.height());
-  totalMatrix.postConcat(matrix);
-  mask->setMatrix(totalMatrix);
-  mask->fillPath(path);
-  auto maskTexture = mask->makeTexture(getContext());
-  drawMask(deviceBounds, maskTexture.get(), shader);
+  auto p = path;
+  p.transform(getViewMatrix());
+  save();
+  resetMatrix();
+  auto args = FPArgs(getContext(), Matrix::I());
+  draw(TriangulatingPathOp::Make(p, state->clip.getBounds()), shader->asFragmentProcessor(args));
+  restore();
+
+//  auto deviceBounds = state->matrix.mapRect(localBounds);
+//  auto width = ceilf(deviceBounds.width());
+//  auto height = ceilf(deviceBounds.height());
+//  auto mask = Mask::Make(static_cast<int>(width), static_cast<int>(height));
+//  if (!mask) {
+//    return;
+//  }
+//  auto totalMatrix = state->matrix;
+//  auto matrix = Matrix::MakeTrans(-deviceBounds.x(), -deviceBounds.y());
+//  matrix.postScale(width / deviceBounds.width(), height / deviceBounds.height());
+//  totalMatrix.postConcat(matrix);
+//  mask->setMatrix(totalMatrix);
+//  mask->fillPath(path);
+//  auto maskTexture = mask->makeTexture(getContext());
+//  drawMask(deviceBounds, maskTexture.get(), shader);
 }
 
 void GLCanvas::drawMask(const Rect& bounds, const Texture* mask, const Shader* shader) {

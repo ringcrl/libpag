@@ -233,8 +233,10 @@ void GLDrawer::draw(DrawArgs args, std::unique_ptr<GLDrawOp> op) const {
     gl->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer->bufferID());
     gl->drawElements(GL_TRIANGLES, static_cast<int>(indexBuffer->length()), GL_UNSIGNED_SHORT, 0);
     gl->bindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  } else {
+  } else if (vertices.size() == 4) {
     gl->drawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  } else {
+    gl->drawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
   }
   if (vertexArray > 0) {
     gl->bindVertexArray(0);

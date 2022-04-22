@@ -124,5 +124,25 @@ struct Point {
   static float Distance(const Point& a, const Point& b) {
     return Length(a.x - b.x, a.y - b.y);
   }
+
+  static float CrossProduct(const Point& a, const Point& b) {
+    return a.x * b.y - a.y * b.x;
+  }
+
+  float cross(const Point& vec) const {
+    return CrossProduct(*this, vec);
+  }
+
+  bool isFinite() const {
+    return ((x + y) * 0 == 0);
+  }
+
+  static float DotProduct(const Point& a, const Point& b) {
+    return a.x * b.x + a.y * b.y;
+  }
+
+  float dot(const Point& vec) const {
+    return DotProduct(*this, vec);
+  }
 };
 }  // namespace tgfx
