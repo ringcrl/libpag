@@ -26,16 +26,18 @@ static const char BLUR_DOWN_FRAGMENT_SHADER[] = R"(
     varying vec2 vertexColor;
     uniform sampler2D uTextureInput;
     
-    uniform float uBlurriness;
+    uniform vec2 uStep;
+    uniform vec2 uOffset;
+
     uniform float uRepeatEdge;
 
     void main()
     {
-        vec4 sum = texture2D(texture, uv) * 4.0;
-        sum += texture2D(texture, uv - halfpixel.xy * offset);
-        sum += texture2D(texture, uv + halfpixel.xy * offset);
-        sum += texture2D(texture, uv + vec2(halfpixel.x, -halfpixel.y) * offset);
-        sum += texture2D(texture, uv - vec2(halfpixel.x, -halfpixel.y) * offset);
+        vec4 sum = texture2D(uTextureInput, vertexColor) * 4.0;
+        sum += texture2D(uTextureInput, vertexColor - uStep.xy * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + uStep.xy * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + vec2(uStep.x, -uStep.y) * uOffset);
+        sum += texture2D(uTextureInput, vertexColor - vec2(uStep.x, -uStep.y) * uOffset);
 
         vec4 color = sum / 8.0;
     
@@ -43,4 +45,32 @@ static const char BLUR_DOWN_FRAGMENT_SHADER[] = R"(
     }
     )";
 
+static const char BLUR_UP_FRAGMENT_SHADER[] = R"(
+    #version 100
+    precision highp float;
+    
+    varying vec2 vertexColor;
+    uniform sampler2D uTextureInput;
+        
+    uniform vec2 uStep;
+    uniform vec2 uOffset;
+    
+    uniform float uRepeatEdge;
+
+    void main()
+    {
+        vec4 sum = texture2D(uTextureInput, vertexColor + vec2(-uStep.x * 2.0, 0.0) * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + vec2(-uStep.x, uStep.y) * uOffset) * 2.0;
+        sum += texture2D(uTextureInput, vertexColor + vec2(0.0, uStep.y * 2.0) * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + vec2(uStep.x, uStep.y) * uOffset) * 2.0;
+        sum += texture2D(uTextureInput, vertexColor + vec2(uStep.x * 2.0, 0.0) * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + vec2(uStep.x, -uStep.y) * uOffset) * 2.0;
+        sum += texture2D(uTextureInput, vertexColor + vec2(0.0, -uStep.y * 2.0) * uOffset);
+        sum += texture2D(uTextureInput, vertexColor + vec2(-uStep.x, -uStep.y) * uOffset) * 2.0;
+
+        vec4 color = sum / 12.0;
+    
+        gl_FragColor = color;
+    }
+    )";
 }  // namespace pag

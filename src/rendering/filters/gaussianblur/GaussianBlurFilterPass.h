@@ -43,7 +43,8 @@ class GaussianBlurFilterPass : public LayerFilter {
                                            const tgfx::Point& filterScale) override;
 
  private:
-  int blurrinessHandle = -1;
+  int stepHandle = -1;
+  int offsetHandle = -1;
   int repeatEdgeHandle = -1;
 
   BlurOptions options = BlurOptions::None;
