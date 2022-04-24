@@ -145,10 +145,7 @@ void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source
   for (int i = blurParam.depth - 1; i >= 0; i --) {
     auto sourceBounds = filtersBounds[boundsAnchor++];
     auto targetBounds = filtersBounds[boundsAnchor];
-    auto filterBuffer = blurFilterBuffer[i];
-    if (filterBuffer == nullptr) {
-      return;
-    }
+    auto filterBuffer = i > 0 ? blurFilterBuffer[i - 1] : nullptr;
     if (i == 0) {
       filterTarget = target;
     } else {
