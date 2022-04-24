@@ -88,15 +88,15 @@ void GaussianBlurFilter::update(Frame frame, const tgfx::Rect& contentBounds,
   auto blurriness = static_cast<FastBlurEffect*>(effect)->blurriness->getValueAt(layerFrame);
   updateBlurParam(blurriness);
   
-  filtersBounds.clear();
-  filtersBounds.emplace_back(contentBounds);
+  filtersBounds[0] = contentBounds;
   auto bounds = transformedBounds;
   for (int i = 0; i < blurParam.depth; i ++) {
     bounds = tgfx::Rect::MakeXYWH(bounds.x() * blurParam.scale, bounds.y() * blurParam.scale,
                                   bounds.width() * blurParam.scale, bounds.height() * blurParam.scale);
-    filtersBounds.emplace_back(bounds);
+    filtersBounds[i + 1] = bounds;
+    filtersBounds[blurParam.depth * 2 - 1 - i] = bounds;
   }
-  filtersBounds.emplace_back(transformedBounds);
+  filtersBounds[blurParam.depth * 2] = transformedBounds;
   filtersBoundsScale = filterScale;
   currentFrame = frame;
 }
@@ -114,9 +114,11 @@ void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source
   auto filterSource = source;
   auto filterTarget = target;
   
+  int boundsAnchor = 0;
+  
   for (int i = 0; i < blurParam.depth; i ++) {
-    auto sourceBounds = filtersBounds[i];
-    auto targetBounds = filtersBounds[i + 1];
+    auto sourceBounds = filtersBounds[boundsAnchor++];
+    auto targetBounds = filtersBounds[boundsAnchor];
     auto filterBuffer = blurFilterBuffer[i];
     if (filterBuffer == nullptr ||
         filterBuffer->width() != targetBounds.width() ||
@@ -139,11 +141,11 @@ void GaussianBlurFilter::draw(tgfx::Context* context, const FilterSource* source
     filterSourcePtr = filterBuffer->toFilterSource(source->scale);
     filterSource = filterSourcePtr.get();
   }
-    
-  for (int i = blurParam.depth - 1; i >= 0; i ++) {
-    auto sourceBounds = filtersBounds[filtersBounds.size() - 2];
-    auto targetBounds = filtersBounds[filtersBounds.size() - 1];
-    auto filterBuffer = blurFilterBuffer[i - 1];
+  
+  for (int i = blurParam.depth - 1; i >= 0; i --) {
+    auto sourceBounds = filtersBounds[boundsAnchor++];
+    auto targetBounds = filtersBounds[boundsAnchor];
+    auto filterBuffer = blurFilterBuffer[i];
     if (filterBuffer == nullptr) {
       return;
     }
