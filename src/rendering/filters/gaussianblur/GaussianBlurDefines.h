@@ -22,11 +22,11 @@
 
 namespace pag {
 
-#define BLUR_LEVEL_1_LIMIT   10
-#define BLUR_LEVEL_2_LIMIT   15
-#define BLUR_LEVEL_3_LIMIT   40
-#define BLUR_LEVEL_4_LIMIT   80
-#define BLUR_LEVEL_5_LIMIT   300
+#define BLUR_LEVEL_1_LIMIT   10.0
+#define BLUR_LEVEL_2_LIMIT   15.0
+#define BLUR_LEVEL_3_LIMIT   40.0
+#define BLUR_LEVEL_4_LIMIT   80.0
+#define BLUR_LEVEL_5_LIMIT   300.0
 
 #define BLUR_LEVEL_MAX_LIMIT BLUR_LEVEL_5_LIMIT
 
@@ -44,7 +44,7 @@ namespace pag {
 #define BLUR_LEVEL_4_SCALE   0.4
 #define BLUR_LEVEL_5_SCALE   0.4
 
-#define BLUR_BLANCE  10
+#define BLUR_STABLE  10.0
 
 struct BlurParam {
   int depth = BLUR_LEVEL_1_DEPTH;

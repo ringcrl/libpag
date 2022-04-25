@@ -66,23 +66,23 @@ void GaussianBlurFilter::updateBlurParam(float blurriness) {
   if (blurriness < BLUR_LEVEL_1_LIMIT) {
     blurParam.depth = BLUR_LEVEL_1_DEPTH;
     blurParam.scale = BLUR_LEVEL_1_SCALE;
-    blurParam.value = blurriness / BLUR_LEVEL_1_LIMIT * 2;
+    blurParam.value = blurriness / BLUR_LEVEL_1_LIMIT * 2.0;
   } else if (blurriness < BLUR_LEVEL_2_LIMIT) {
     blurParam.depth = BLUR_LEVEL_2_DEPTH;
     blurParam.scale = BLUR_LEVEL_2_SCALE;
-    blurParam.value = (blurriness - BLUR_BLANCE) / (BLUR_LEVEL_2_LIMIT - BLUR_BLANCE) * 3;
+    blurParam.value = (blurriness - BLUR_STABLE) / (BLUR_LEVEL_2_LIMIT - BLUR_STABLE) * 3.0;
   } else if (blurriness < BLUR_LEVEL_3_LIMIT) {
     blurParam.depth = BLUR_LEVEL_3_DEPTH;
     blurParam.scale = BLUR_LEVEL_3_SCALE;
-    blurParam.value = (blurriness - BLUR_BLANCE) / (BLUR_LEVEL_3_LIMIT - BLUR_BLANCE) * 4;
+    blurParam.value = (blurriness - BLUR_STABLE) / (BLUR_LEVEL_3_LIMIT - BLUR_STABLE) * 4.0;
   } else if (blurriness < BLUR_LEVEL_4_LIMIT) {
     blurParam.depth = BLUR_LEVEL_4_DEPTH;
     blurParam.scale = BLUR_LEVEL_4_SCALE;
-    blurParam.value = (blurriness - BLUR_BLANCE * 2) / (BLUR_LEVEL_4_LIMIT - BLUR_BLANCE * 2) * 3;
+    blurParam.value = (blurriness - BLUR_STABLE * 2.0) / (BLUR_LEVEL_4_LIMIT - BLUR_STABLE * 2.0) * 3.0;
   } else {
     blurParam.depth = BLUR_LEVEL_5_DEPTH;
     blurParam.scale = BLUR_LEVEL_5_SCALE;
-    blurParam.value = 3 + (blurriness - BLUR_LEVEL_4_LIMIT) / (BLUR_LEVEL_5_LIMIT - BLUR_LEVEL_4_LIMIT) * 6;
+    blurParam.value = 3.0 + (blurriness - BLUR_STABLE * 8.0) / (BLUR_LEVEL_5_LIMIT - BLUR_STABLE * 8.0) * 6.0;
   }
 }
 
