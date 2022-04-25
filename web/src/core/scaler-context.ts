@@ -95,8 +95,8 @@ export class ScalerContext {
     const xMetrics = this.measureText(context, 'x');
     const xHeight = xMetrics.actualBoundingBoxAscent;
     return {
-      ascent: -metrics.fontBoundingBoxAscent,
-      descent: metrics.fontBoundingBoxDescent,
+      ascent: -metrics.actualBoundingBoxAscent,
+      descent: metrics.actualBoundingBoxDescent,
       xHeight,
       capHeight,
     };

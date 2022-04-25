@@ -101,6 +101,9 @@ export class WebMask {
 
   public update(GL: EmscriptenGL) {
     const gl = GL.currentContext?.GLctx as WebGLRenderingContext;
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, gl.ALPHA, gl.UNSIGNED_BYTE, this.canvas);
+    const ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height) as any
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageData);
   }
 }
