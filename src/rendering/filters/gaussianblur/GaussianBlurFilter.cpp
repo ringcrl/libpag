@@ -74,7 +74,7 @@ void GaussianBlurFilter::updateBlurParam(float blurriness) {
   } else if (blurriness < BLUR_LEVEL_3_LIMIT) {
     blurParam.depth = BLUR_LEVEL_3_DEPTH;
     blurParam.scale = BLUR_LEVEL_3_SCALE;
-    blurParam.value = (blurriness - BLUR_STABLE) / (BLUR_LEVEL_3_LIMIT - BLUR_STABLE) * 4.0;
+    blurParam.value = (blurriness - BLUR_STABLE) / (BLUR_LEVEL_3_LIMIT - BLUR_STABLE) * 5.0;
   } else if (blurriness < BLUR_LEVEL_4_LIMIT) {
     blurParam.depth = BLUR_LEVEL_4_DEPTH;
     blurParam.scale = BLUR_LEVEL_4_SCALE;
@@ -82,7 +82,7 @@ void GaussianBlurFilter::updateBlurParam(float blurriness) {
   } else {
     blurParam.depth = BLUR_LEVEL_5_DEPTH;
     blurParam.scale = BLUR_LEVEL_5_SCALE;
-    blurParam.value = 3.0 + (blurriness - BLUR_STABLE * 8.0) / (BLUR_LEVEL_5_LIMIT - BLUR_STABLE * 8.0) * 6.0;
+    blurParam.value = 3.0 + (blurriness - BLUR_STABLE * 12.0) / (BLUR_LEVEL_5_LIMIT - BLUR_STABLE * 12.0) * 6.0;
   }
 }
 
