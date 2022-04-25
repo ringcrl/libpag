@@ -61,23 +61,28 @@ bool GaussianBlurFilter::initialize(tgfx::Context* context) {
 }
 
 void GaussianBlurFilter::updateBlurParam(float blurriness) {
-  blurriness = blurriness < BLUR_MODE_SCALE_FOUR_PASS_LIMIT ?
-               blurriness : BLUR_MODE_SCALE_FOUR_PASS_LIMIT;
-  if (blurriness < BLUR_MODE_NO_SCALE_TWO_PASS_LIMIT) {
-    blurParam.mode = BlurMode::NoScaleTwoPass;
-    blurParam.depth = BLUR_DEPTH_TWO_PASS;
-    blurParam.scale = BLUR_NO_SCALE_TWO_PASS;
-    blurParam.value = blurriness;
-  } else if (blurriness < BLUR_MODE_SCALE_TWO_PASS_LIMIT) {
-    blurParam.mode = BlurMode::ScaleTwoPass;
-    blurParam.depth = BLUR_DEPTH_TWO_PASS;
-    blurParam.scale = BLUR_SCALE_TWO_PASS;
-    blurParam.value = blurriness;
+  blurriness = blurriness < BLUR_LEVEL_MAX_LIMIT ?
+               blurriness : BLUR_LEVEL_MAX_LIMIT;
+  if (blurriness < BLUR_LEVEL_1_LIMIT) {
+    blurParam.depth = BLUR_LEVEL_1_DEPTH;
+    blurParam.scale = BLUR_LEVEL_1_SCALE;
+    blurParam.value = blurriness / BLUR_LEVEL_1_LIMIT * 2;
+  } else if (blurriness < BLUR_LEVEL_2_LIMIT) {
+    blurParam.depth = BLUR_LEVEL_2_DEPTH;
+    blurParam.scale = BLUR_LEVEL_2_SCALE;
+    blurParam.value = (blurriness - BLUR_BLANCE) / (BLUR_LEVEL_2_LIMIT - BLUR_BLANCE) * 3;
+  } else if (blurriness < BLUR_LEVEL_3_LIMIT) {
+    blurParam.depth = BLUR_LEVEL_3_DEPTH;
+    blurParam.scale = BLUR_LEVEL_3_SCALE;
+    blurParam.value = (blurriness - BLUR_BLANCE) / (BLUR_LEVEL_3_LIMIT - BLUR_BLANCE) * 4;
+  } else if (blurriness < BLUR_LEVEL_4_LIMIT) {
+    blurParam.depth = BLUR_LEVEL_4_DEPTH;
+    blurParam.scale = BLUR_LEVEL_4_SCALE;
+    blurParam.value = (blurriness - BLUR_BLANCE * 2) / (BLUR_LEVEL_4_LIMIT - BLUR_BLANCE * 2) * 3;
   } else {
-    blurParam.mode = BlurMode::ScaleFourPass;
-    blurParam.depth = BLUR_DEPTH_FOUR_PASS;
-    blurParam.scale = BLUR_SCALE_FOUR_PASS;
-    blurParam.value = blurriness;
+    blurParam.depth = BLUR_LEVEL_5_DEPTH;
+    blurParam.scale = BLUR_LEVEL_5_SCALE;
+    blurParam.value = 3 + (blurriness - BLUR_LEVEL_4_LIMIT) / (BLUR_LEVEL_5_LIMIT - BLUR_LEVEL_4_LIMIT) * 6;
   }
 }
 

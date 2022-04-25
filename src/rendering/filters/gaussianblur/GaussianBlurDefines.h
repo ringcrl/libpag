@@ -22,30 +22,33 @@
 
 namespace pag {
 
-#define BLUR_MODE_NO_SCALE_TWO_PASS_LIMIT  40
-#define BLUR_MODE_SCALE_TWO_PASS_LIMIT     120
-#define BLUR_MODE_SCALE_FOUR_PASS_LIMIT    300
+#define BLUR_LEVEL_1_LIMIT   10
+#define BLUR_LEVEL_2_LIMIT   15
+#define BLUR_LEVEL_3_LIMIT   40
+#define BLUR_LEVEL_4_LIMIT   80
+#define BLUR_LEVEL_5_LIMIT   300
 
-enum class BlurMode : unsigned {
-  None            = 0,
-  NoScaleTwoPass  = 1,
-  ScaleTwoPass    = 2,
-  ScaleFourPass   = 3
-};
+#define BLUR_LEVEL_MAX_LIMIT BLUR_LEVEL_5_LIMIT
 
-#define BLUR_DEPTH_TWO_PASS   1
-#define BLUR_DEPTH_FOUR_PASS  2
+#define BLUR_LEVEL_1_DEPTH   1
+#define BLUR_LEVEL_2_DEPTH   2
+#define BLUR_LEVEL_3_DEPTH   2
+#define BLUR_LEVEL_4_DEPTH   3
+#define BLUR_LEVEL_5_DEPTH   3
 
-#define BLUR_DEPTH_MAX BLUR_DEPTH_FOUR_PASS
+#define BLUR_DEPTH_MAX BLUR_LEVEL_5_DEPTH
 
-#define BLUR_NO_SCALE_TWO_PASS  1.0
-#define BLUR_SCALE_TWO_PASS     0.7
-#define BLUR_SCALE_FOUR_PASS    0.5
+#define BLUR_LEVEL_1_SCALE   1.0
+#define BLUR_LEVEL_2_SCALE   0.8
+#define BLUR_LEVEL_3_SCALE   0.5
+#define BLUR_LEVEL_4_SCALE   0.4
+#define BLUR_LEVEL_5_SCALE   0.4
+
+#define BLUR_BLANCE  10
 
 struct BlurParam {
-  BlurMode mode = BlurMode::None;
-  int depth = BLUR_DEPTH_TWO_PASS;
-  float scale = BLUR_NO_SCALE_TWO_PASS;
+  int depth = BLUR_LEVEL_1_DEPTH;
+  float scale = BLUR_LEVEL_1_SCALE;
   float value = 0.0;
   bool repeatEdgePixels = true;
 };

@@ -43,7 +43,7 @@ void GaussianBlurFilterPass::onPrepareProgram(tgfx::Context* context, unsigned i
 }
 
 void GaussianBlurFilterPass::updateParams(float blurValue) {
-  blurriness = blurValue / 100.0;
+  blurriness = blurValue;
 }
 
 void GaussianBlurFilterPass::onUpdateParams(tgfx::Context* context, const tgfx::Rect& contentBounds,
