@@ -19,16 +19,16 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 #include "base/utils/TGFXCast.h"
-#include "core/FontMetrics.h"
-#include "core/ImageInfo.h"
-#include "core/PathTypes.h"
-#include "gpu/opengl/GLDefines.h"
 #include "pag/pag.h"
 #include "pag/types.h"
 #include "platform/web/GPUDrawable.h"
 #include "platform/web/WebSoftwareDecoderFactory.h"
 #include "rendering/editing/StillImage.h"
 #include "rendering/video/VideoDecoder.h"
+#include "tgfx/core/FontMetrics.h"
+#include "tgfx/core/ImageInfo.h"
+#include "tgfx/core/PathTypes.h"
+#include "tgfx/gpu/opengl/GLDefines.h"
 #include "tgfx/src/platform/web/NativeImage.h"
 
 using namespace emscripten;
@@ -259,7 +259,14 @@ EMSCRIPTEN_BINDINGS(pag) {
       .function("_height", &PAGSurface::height)
       .function("_updateSize", &PAGSurface::updateSize)
       .function("_clearAll", &PAGSurface::clearAll)
-      .function("_freeCache", &PAGSurface::freeCache);
+      .function("_freeCache", &PAGSurface::freeCache)
+      .function("_readPixels",
+                optional_override([](PAGSurface& pagSurface, int colorType, int alphaType,
+                                     uintptr_t dstPixels, size_t dstRowBytes) {
+                  return pagSurface.readPixels(static_cast<ColorType>(colorType),
+                                               static_cast<AlphaType>(alphaType),
+                                               reinterpret_cast<void*>(dstPixels), dstRowBytes);
+                }));
 
   class_<PAGImage>("_PAGImage")
       .smart_ptr<std::shared_ptr<PAGImage>>("_PAGImage")
@@ -362,8 +369,12 @@ EMSCRIPTEN_BINDINGS(pag) {
       .property("applyStroke", &TextDocument::applyStroke)
       .property("baselineShift", &TextDocument::baselineShift)
       .property("boxText", &TextDocument::boxText)
-      .property("boxTextPos", &TextDocument::boxTextPos)
-      .property("boxTextSize", &TextDocument::boxTextSize)
+      .property("boxTextPos", optional_override([](const TextDocument& textDocument) {
+                  return ToTGFX(textDocument.boxTextPos);
+                }))
+      .property("boxTextSize", optional_override([](const TextDocument& textDocument) {
+                  return ToTGFX(textDocument.boxTextSize);
+                }))
       .property("firstBaseLine", &TextDocument::firstBaseLine)
       .property("fauxBold", &TextDocument::fauxBold)
       .property("fauxItalic", &TextDocument::fauxItalic)
@@ -437,12 +448,6 @@ EMSCRIPTEN_BINDINGS(pag) {
       .value("EvenOdd", tgfx::PathFillType::EvenOdd)
       .value("InverseWinding", tgfx::PathFillType::InverseWinding)
       .value("InverseEvenOdd", tgfx::PathFillType::InverseEvenOdd);
-
-  enum_<ColorType>("ColorType")
-      .value("Unknown", ColorType::Unknown)
-      .value("ALPHA_8", ColorType::ALPHA_8)
-      .value("RGBA_8888", ColorType::RGBA_8888)
-      .value("BGRA_8888", ColorType::BGRA_8888);
 
   enum_<tgfx::LineCap>("LineCap")
       .value("Butt", tgfx::LineCap::Butt)
