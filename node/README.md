@@ -17,3 +17,20 @@ node node-pag.js
 # API 绑定参考
 
 `src/platform/web/PAGWasmBindings.cpp`
+
+# 配置头文件
+
+```json
+// .vscode/c_cpp_properties.json
+{
+  "configurations": [
+    {
+      "name": "gcc-node",
+      "includePath": [
+        "/root/.nvm/versions/node/v16.15.0/include/node"
+      ]
+    }
+  ],
+  "version": 4
+}
+```
