@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "name": "gcc-node",
+      "includePath": [
+        "/root/.nvm/versions/node/v16.15.0/include/node"
+      ]
+    }
+  ],
+  "version": 4
+}
