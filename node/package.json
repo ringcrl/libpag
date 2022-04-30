@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "cmake": "cmake-js compile",
+    "build": "cmake-js compile --debug",
     "test": "node node-pag.js"
   },
   "author": "",
@@ -16,6 +16,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "cmake-js": "^6.3.0",
+    "node-addon-api": "^4.3.0",
     "node-gyp": "^9.0.0"
   }
 }

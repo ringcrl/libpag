@@ -1,7 +1,7 @@
 #include <pag/file.h>
 #include <pag/pag.h>
 #include <assert.h>
-#include <node_api.h>
+#include <napi.h>
 
 int64_t GetTimer() {
   static auto START_TIME = std::chrono::high_resolution_clock::now();
@@ -11,12 +11,12 @@ int64_t GetTimer() {
 }
 
 std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
-  auto pagFile = pag::PAGFile::Load("../../assets/test2.pag");
+  auto pagFile = pag::PAGFile::Load("/data/github.com/libpag/assets/test2.pag");
   if (pagFile == nullptr) {
     return nullptr;
   }
   for (int i = 0; i < pagFile->numImages(); i++) {
-    auto pagImage = pag::PAGImage::FromPath("../../assets/scene.png");
+    auto pagImage = pag::PAGImage::FromPath("/data/github.com/libpag/assets/scene.png");
     pagFile->replaceImage(i, pagImage);
   }
 
@@ -24,7 +24,7 @@ std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
     auto textDocumentHandle = pagFile->getTextData(i);
     textDocumentHandle->text = "hah哈 哈哈哈哈👌";
     // Use special font
-    auto pagFont = pag::PAGFont::RegisterFont("../../resources/font/NotoSansSC-Regular.otf", 0);
+    auto pagFont = pag::PAGFont::RegisterFont("/data/github.com/libpag/resources/font/NotoSansSC-Regular.otf", 0);
     textDocumentHandle->fontFamily = pagFont.fontFamily;
     textDocumentHandle->fontStyle = pagFont.fontStyle;
     pagFile->replaceText(i, textDocumentHandle);
@@ -73,25 +73,27 @@ void BmpWrite(unsigned char* image, int imageWidth, int imageHeight, const char*
   fclose(fp);
 }
 
-static napi_value Method(napi_env env, napi_callback_info info) {
+static Napi::Number Method(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
   auto startTime = GetTimer();
   // Register fallback fonts. It should be called only once when the application is being initialized.
   std::vector<std::string> fallbackFontPaths = {};
-  fallbackFontPaths.emplace_back("../../resources/font/NotoSerifSC-Regular.otf");
-  fallbackFontPaths.emplace_back("../../resources/font/NotoColorEmoji.ttf");
+  fallbackFontPaths.emplace_back("/data/github.com/libpag/resources/font/NotoSerifSC-Regular.otf");
+  fallbackFontPaths.emplace_back("/data/github.com/libpag/resources/font/NotoColorEmoji.ttf");
   std::vector<int> ttcIndices(fallbackFontPaths.size());
   pag::PAGFont::SetFallbackFontPaths(fallbackFontPaths, ttcIndices);
 
   auto pagFile = ReplaceImageOrText();
   if (pagFile == nullptr) {
     printf("---pagFile is nullptr!!!\n");
-    return -1;
+    return Napi::Number::New(env, -1);
   }
 
   auto pagSurface = pag::PAGSurface::MakeOffscreen(pagFile->width(), pagFile->height());
   if (pagSurface == nullptr) {
     printf("---pagSurface is nullptr!!!\n");
-    return -1;
+    return Napi::Number::New(env, -1);
   }
   auto pagPlayer = new pag::PAGPlayer();
   pagPlayer->setSurface(pagSurface);
@@ -125,18 +127,12 @@ static napi_value Method(napi_env env, napi_callback_info info) {
 
   printf("----timeCost--:%lld \n", GetTimer() - startTime);
 
-  return 0;
+  return Napi::Number::New(env, 0);
 }
 
-#define DECLARE_NAPI_METHOD(name, func)                                        \
-  { name, 0, func, 0, 0, 0, napi_default, 0 }
-
-static napi_value Init(napi_env env, napi_value exports) {
-  napi_status status;
-  napi_property_descriptor desc = DECLARE_NAPI_METHOD("hello", Method);
-  status = napi_define_properties(env, exports, 1, &desc);
-  assert(status == napi_ok);
+static Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  exports.Set(Napi::String::New(env, "hello"), Napi::Function::New(env, Method));
   return exports;
 }
 
-NAPI_MODULE(hello, Init)
+NODE_API_MODULE(hello, Init)
