@@ -18,8 +18,20 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
 # 你应该在每个基于CMake.js的项目中添加这一行
 include_directories(${CMAKE_JS_INC})
 
+# 使用 node-addon-api 而不是 node-api，类似于 C++ 之于 C
+# Include N-API wrappers
+# $ node -p "require('node-addon-api').include"
+# "/home/will/projects/financialcpp/financialcpp/node_modules/node-addon-api"
+execute_process(COMMAND node -p "require('node-addon-api').include"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE NODE_ADDON_API_DIR
+        )
+# strip `"` and `\n` from the output above
+string(REPLACE "\n" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
+string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_ADDON_API_DIR})
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../linux/vendor/pag/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/node_modules/node-addon-api)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${cppFlags} -pthread")
 add_compile_options(-fPIC)

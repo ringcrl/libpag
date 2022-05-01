@@ -4,21 +4,18 @@
 # 依赖安装
 npm i
 
-# 插件安装
-npm install -g cmake-js
-
 # 编译
-npm run cmake
+npm run build
 
 # 测试
-node node-pag.js
+npm run test
 ```
 
 # API 绑定参考
 
 `src/platform/web/PAGWasmBindings.cpp`
 
-# 配置头文件
+# VSCode 配置头文件
 
 ```json
 // .vscode/c_cpp_properties.json
