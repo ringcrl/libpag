@@ -31,3 +31,18 @@ npm run test
   "version": 4
 }
 ```
+
+# 问题定位
+
+## 符号链接错误
+
+```sh
+# 找到具体函数
+c++filt <symbol>
+
+# 确认 pathkit 有问题，在 third_party/pathkit/CMakeLists.txt 添加
+# add_compile_options(-fPIC)
+
+# 重新编译 third_party
+node build_vendor -p linux
+```
