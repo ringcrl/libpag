@@ -27,24 +27,24 @@ int64_t GetTimer() {
 }
 
 std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
-  auto pagFile = pag::PAGFile::Load("../../assets/test2.pag");
+  auto pagFile = pag::PAGFile::Load("../../assets/paizhao.pag");
   if (pagFile == nullptr) {
     return nullptr;
   }
-  for (int i = 0; i < pagFile->numImages(); i++) {
-    auto pagImage = pag::PAGImage::FromPath("../../assets/scene.png");
-    pagFile->replaceImage(i, pagImage);
-  }
+  // for (int i = 0; i < pagFile->numImages(); i++) {
+  //   auto pagImage = pag::PAGImage::FromPath("../../assets/scene.png");
+  //   pagFile->replaceImage(i, pagImage);
+  // }
 
-  for (int i = 0; i < pagFile->numTexts(); i++) {
-    auto textDocumentHandle = pagFile->getTextData(i);
-    textDocumentHandle->text = "hah哈 哈哈哈哈👌";
-    // Use special font
-    auto pagFont = pag::PAGFont::RegisterFont("../../resources/font/NotoSansSC-Regular.otf", 0);
-    textDocumentHandle->fontFamily = pagFont.fontFamily;
-    textDocumentHandle->fontStyle = pagFont.fontStyle;
-    pagFile->replaceText(i, textDocumentHandle);
-  }
+  // for (int i = 0; i < pagFile->numTexts(); i++) {
+  //   auto textDocumentHandle = pagFile->getTextData(i);
+  //   textDocumentHandle->text = "hah哈 哈哈哈哈👌";
+  //   // Use special font
+  //   auto pagFont = pag::PAGFont::RegisterFont("../../resources/font/NotoSansSC-Regular.otf", 0);
+  //   textDocumentHandle->fontFamily = pagFont.fontFamily;
+  //   textDocumentHandle->fontStyle = pagFont.fontStyle;
+  //   pagFile->replaceText(i, textDocumentHandle);
+  // }
 
   return pagFile;
 }
@@ -92,11 +92,11 @@ void BmpWrite(unsigned char* image, int imageWidth, int imageHeight, const char*
 int main() {
   auto startTime = GetTimer();
   // Register fallback fonts. It should be called only once when the application is being initialized.
-  std::vector<std::string> fallbackFontPaths = {};
-  fallbackFontPaths.emplace_back("../../resources/font/NotoSerifSC-Regular.otf");
-  fallbackFontPaths.emplace_back("../../resources/font/NotoColorEmoji.ttf");
-  std::vector<int> ttcIndices(fallbackFontPaths.size());
-  pag::PAGFont::SetFallbackFontPaths(fallbackFontPaths, ttcIndices);
+  // std::vector<std::string> fallbackFontPaths = {};
+  // fallbackFontPaths.emplace_back("../../resources/font/NotoSerifSC-Regular.otf");
+  // fallbackFontPaths.emplace_back("../../resources/font/NotoColorEmoji.ttf");
+  // std::vector<int> ttcIndices(fallbackFontPaths.size());
+  // pag::PAGFont::SetFallbackFontPaths(fallbackFontPaths, ttcIndices);
 
   auto pagFile = ReplaceImageOrText();
   if (pagFile == nullptr) {
