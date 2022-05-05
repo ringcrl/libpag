@@ -61,7 +61,7 @@ void BmpWrite(unsigned char* image, int imageWidth, int imageHeight, const char*
   header[25] = (height >> 24) & 0x000000ff;
 
   char fname_bmp[128];
-  sprintf(fname_bmp, "%s.bmp", filename);
+  sprintf(fname_bmp, "out/%s.bmp", filename);
 
   FILE* fp;
   if (!(fp = fopen(fname_bmp, "wb"))) {

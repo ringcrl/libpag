@@ -50,11 +50,6 @@ node build_vendor -p linux
 ## 所有 third_party 添加 -fPIC
 
 ```sh
-# 测试build -fPIC
-node build_vendor libpng
-```
-
-```sh
 # 删除 third_party 编译内容 out
 
 # 查看 build 帮助
@@ -65,7 +60,13 @@ node build_vendor -h
 # 重新编译 third_party
 node build_vendor -p linux
 
+# 编译 pag
+./build_node.sh
+
 # 编译 .node
 cd node
 npm run build
+
+# 测试运行 pag
+npm run test
 ```

@@ -74,3 +74,4 @@ test/baseline/.cache
 linux/vendor
 linux_out
 node/vendor
+node/out
