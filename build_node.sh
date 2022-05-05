@@ -17,7 +17,7 @@ make_dir $BUILD_DIR
 
 cd $BUILD_DIR
 
-cmake -DPAG_USE_SWIFTSHADER=ON -DPAG_BUILD_SHARED=OFF -DCMAKE_BUILD_TYPE=Release ../
+cmake -DPAG_USE_SWIFTSHADER=ON -DPAG_BUILD_SHARED=ON -DCMAKE_BUILD_TYPE=Release ../
 
 RETURN_CODE=$?
 if [ "$RETURN_CODE" -eq "0" ]
@@ -44,7 +44,7 @@ make_dir node/vendor/pag/include
 cp -a include/* node/vendor/pag/include
 
 make_dir node/vendor/pag/$PLATFORM/x64
-cp -a $BUILD_DIR/libpag.a node/vendor/pag/$PLATFORM/x64
+cp -a $BUILD_DIR/libpag.so node/vendor/pag/$PLATFORM/x64
 
 make_dir node/vendor/swiftshader
 cp -a vendor/swiftshader/* node/vendor/swiftshader

@@ -49,6 +49,23 @@ node build_vendor -p linux
 
 ## 所有 third_party 添加 -fPIC
 
-```cpp
+```sh
+# 测试build -fPIC
+node build_vendor libpng
+```
 
+```sh
+# 删除 third_party 编译内容 out
+
+# 查看 build 帮助
+node build_vendor -h
+
+# 修改 vendor_tool/CMake.js，buildArch 方法添加 buildType + " -DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+
+# 重新编译 third_party
+node build_vendor -p linux
+
+# 编译 .node
+cd node
+npm run build
 ```
