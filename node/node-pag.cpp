@@ -10,29 +10,6 @@ int64_t GetTimer() {
   return static_cast<int64_t>(ns.count() * 1e-3);
 }
 
-std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
-  auto pagFile = pag::PAGFile::Load("/data/github.com/libpag/assets/test2.pag");
-  if (pagFile == nullptr) {
-    return nullptr;
-  }
-  for (int i = 0; i < pagFile->numImages(); i++) {
-    auto pagImage = pag::PAGImage::FromPath("/data/github.com/libpag/assets/scene.png");
-    pagFile->replaceImage(i, pagImage);
-  }
-
-  for (int i = 0; i < pagFile->numTexts(); i++) {
-    auto textDocumentHandle = pagFile->getTextData(i);
-    textDocumentHandle->text = "hah哈 哈哈哈哈👌";
-    // Use special font
-    auto pagFont = pag::PAGFont::RegisterFont("/data/github.com/libpag/resources/font/NotoSansSC-Regular.otf", 0);
-    textDocumentHandle->fontFamily = pagFont.fontFamily;
-    textDocumentHandle->fontStyle = pagFont.fontStyle;
-    pagFile->replaceText(i, textDocumentHandle);
-  }
-
-  return pagFile;
-}
-
 int64_t TimeToFrame(int64_t time, float frameRate) {
   return static_cast<int64_t>(floor(time * frameRate / 1000000ll));
 }
@@ -73,7 +50,7 @@ void BmpWrite(unsigned char* image, int imageWidth, int imageHeight, const char*
   fclose(fp);
 }
 
-static Napi::Number Method(const Napi::CallbackInfo& info) {
+static Napi::Number Test(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
 
   auto startTime = GetTimer();
@@ -84,10 +61,23 @@ static Napi::Number Method(const Napi::CallbackInfo& info) {
   std::vector<int> ttcIndices(fallbackFontPaths.size());
   pag::PAGFont::SetFallbackFontPaths(fallbackFontPaths, ttcIndices);
 
-  auto pagFile = ReplaceImageOrText();
+  auto pagFile = pag::PAGFile::Load("/data/github.com/libpag/assets/test2.pag");
   if (pagFile == nullptr) {
-    printf("---pagFile is nullptr!!!\n");
     return Napi::Number::New(env, -1);
+  }
+  for (int i = 0; i < pagFile->numImages(); i++) {
+    auto pagImage = pag::PAGImage::FromPath("/data/github.com/libpag/assets/scene.png");
+    pagFile->replaceImage(i, pagImage);
+  }
+
+  for (int i = 0; i < pagFile->numTexts(); i++) {
+    auto textDocumentHandle = pagFile->getTextData(i);
+    textDocumentHandle->text = "hah哈 哈哈哈哈👌";
+    // Use special font
+    auto pagFont = pag::PAGFont::RegisterFont("/data/github.com/libpag/resources/font/NotoSansSC-Regular.otf", 0);
+    textDocumentHandle->fontFamily = pagFont.fontFamily;
+    textDocumentHandle->fontStyle = pagFont.fontStyle;
+    pagFile->replaceText(i, textDocumentHandle);
   }
 
   auto pagSurface = pag::PAGSurface::MakeOffscreen(pagFile->width(), pagFile->height());
@@ -131,8 +121,8 @@ static Napi::Number Method(const Napi::CallbackInfo& info) {
 }
 
 static Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  exports.Set(Napi::String::New(env, "hello"), Napi::Function::New(env, Method));
+  exports.Set(Napi::String::New(env, "test"), Napi::Function::New(env, Test));
   return exports;
 }
 
-NODE_API_MODULE(hello, Init)
+NODE_API_MODULE(addon, Init)
