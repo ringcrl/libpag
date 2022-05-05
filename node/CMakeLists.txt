@@ -31,7 +31,7 @@ string(REPLACE "\n" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${NODE_ADDON_API_DIR})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../linux/vendor/pag/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vendor/pag/include)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${cppFlags} -pthread")
 add_compile_options(-fPIC)
@@ -45,15 +45,15 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 list(APPEND libs ${ZLIB_LIBRARIES})
 list(APPEND libs dl)
 
-list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/../linux/vendor/pag/linux/x64/libpag.a)
-list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/../linux/vendor/swiftshader/linux/x64/libEGL.so)
-list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/../linux/vendor/swiftshader/linux/x64/libGLESv2.so)
+list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/vendor/pag/linux/x64/libpag.so)
+list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/vendor/swiftshader/linux/x64/libEGL.so)
+list(APPEND libs ${CMAKE_CURRENT_SOURCE_DIR}/vendor/swiftshader/linux/x64/libGLESv2.so)
 
 target_link_libraries(${PROJECT_NAME} ${libs})
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g -O1")
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g -O1")
+# endif()
 
 # Define NAPI_VERSION
 add_definitions(-DNAPI_VERSION=3)

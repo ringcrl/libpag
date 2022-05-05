@@ -43,7 +43,6 @@ emcc $RELEASE_CONF -std=c++17 \
   -s ENVIRONMENT="node" \
   -s EXPORT_ES6=1 \
   -s USE_ES6_IMPORT_META=0 \
-  -msimd128 \
   -o ../src/wasm/libpag.js
 
 if test $? -eq 0

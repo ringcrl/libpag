@@ -46,3 +46,9 @@ c++filt <symbol>
 # 重新编译 third_party
 node build_vendor -p linux
 ```
+
+## 所有 third_party 添加 -fPIC
+
+```cpp
+
+```

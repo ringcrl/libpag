@@ -40,15 +40,13 @@ fi
 
 cd ..
 
-make_dir linux/vendor/pag/include
-cp -a include/* linux/vendor/pag/include
+make_dir node/vendor/pag/include
+cp -a include/* node/vendor/pag/include
 
-make_dir linux/vendor/pag/$PLATFORM/x64
-cp -a $BUILD_DIR/libpag.a linux/vendor/pag/$PLATFORM/x64
+make_dir node/vendor/pag/$PLATFORM/x64
+cp -a $BUILD_DIR/libpag.a node/vendor/pag/$PLATFORM/x64
 
-make_dir linux/vendor/swiftshader
-cp -a vendor/swiftshader/* linux/vendor/swiftshader
+make_dir node/vendor/swiftshader
+cp -a vendor/swiftshader/* node/vendor/swiftshader
 
 rm -rf $BUILD_DIR
-
-
