@@ -18,35 +18,26 @@
 
 #pragma once
 
-#include "tgfx/core/Image.h"
+#include "GLDrawer.h"
+#include "tgfx/core/Path.h"
 
 namespace tgfx {
-class PngImage : public Image {
+class GLTriangulatingPathOp : public GLDrawOp {
  public:
-  static std::shared_ptr<Image> MakeFrom(const std::string& filePath);
-  static std::shared_ptr<Image> MakeFrom(std::shared_ptr<Data> imageBytes);
-  static bool IsPng(const std::shared_ptr<Data>& data);
+  static std::unique_ptr<GLTriangulatingPathOp> Make(const Path& path, const Rect& clipBounds);
 
-#ifdef TGFX_USE_PNG_ENCODE
-  static std::shared_ptr<Data> Encode(const ImageInfo& info, const void* pixels,
-                                      EncodedFormat format, int quality);
-#endif
+  std::unique_ptr<GeometryProcessor> getGeometryProcessor(const DrawArgs& args) override;
 
- protected:
-  bool readPixels(const ImageInfo& dstInfo, void* dstPixels) const override;
+  std::vector<float> vertices(const DrawArgs& args) override;
+
+  void draw(const DrawArgs& args) override;
 
  private:
-  static std::shared_ptr<Image> MakeFromData(const std::string& filePath,
-                                             std::shared_ptr<Data> byteData);
-
-  PngImage(int width, int height, Orientation orientation, std::string filePath,
-           std::shared_ptr<Data> fileData)
-      : Image(width, height, orientation),
-        fileData(std::move(fileData)),
-        filePath(std::move(filePath)) {
+  GLTriangulatingPathOp(std::vector<float> vertex, int vertexCount)
+      : vertex(std::move(vertex)), vertexCount(vertexCount) {
   }
 
-  std::shared_ptr<Data> fileData;
-  std::string filePath;
+  std::vector<float> vertex;
+  int vertexCount;
 };
 }  // namespace tgfx

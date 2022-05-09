@@ -18,35 +18,22 @@
 
 #pragma once
 
-#include "tgfx/core/Image.h"
+#include <optional>
+#include "gpu/GLGeometryProcessor.h"
 
 namespace tgfx {
-class PngImage : public Image {
+class GLDefaultGeometryProcessor : public GLGeometryProcessor {
  public:
-  static std::shared_ptr<Image> MakeFrom(const std::string& filePath);
-  static std::shared_ptr<Image> MakeFrom(std::shared_ptr<Data> imageBytes);
-  static bool IsPng(const std::shared_ptr<Data>& data);
+  void emitCode(EmitArgs& args) override;
 
-#ifdef TGFX_USE_PNG_ENCODE
-  static std::shared_ptr<Data> Encode(const ImageInfo& info, const void* pixels,
-                                      EncodedFormat format, int quality);
-#endif
-
- protected:
-  bool readPixels(const ImageInfo& dstInfo, void* dstPixels) const override;
+  void setData(const ProgramDataManager& programDataManager,
+               const GeometryProcessor& geometryProcessor,
+               FPCoordTransformIter* transformIter) override;
 
  private:
-  static std::shared_ptr<Image> MakeFromData(const std::string& filePath,
-                                             std::shared_ptr<Data> byteData);
+  UniformHandle screenSizeUniform;
 
-  PngImage(int width, int height, Orientation orientation, std::string filePath,
-           std::shared_ptr<Data> fileData)
-      : Image(width, height, orientation),
-        fileData(std::move(fileData)),
-        filePath(std::move(filePath)) {
-  }
-
-  std::shared_ptr<Data> fileData;
-  std::string filePath;
+  std::optional<int> widthPrev;
+  std::optional<int> heightPrev;
 };
 }  // namespace tgfx

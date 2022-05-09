@@ -18,35 +18,30 @@
 
 #pragma once
 
-#include "tgfx/core/Image.h"
+#include "GeometryProcessor.h"
 
 namespace tgfx {
-class PngImage : public Image {
+class DefaultGeometryProcessor : public GeometryProcessor {
  public:
-  static std::shared_ptr<Image> MakeFrom(const std::string& filePath);
-  static std::shared_ptr<Image> MakeFrom(std::shared_ptr<Data> imageBytes);
-  static bool IsPng(const std::shared_ptr<Data>& data);
+  static std::unique_ptr<DefaultGeometryProcessor> Make(int width, int height);
 
-#ifdef TGFX_USE_PNG_ENCODE
-  static std::shared_ptr<Data> Encode(const ImageInfo& info, const void* pixels,
-                                      EncodedFormat format, int quality);
-#endif
-
- protected:
-  bool readPixels(const ImageInfo& dstInfo, void* dstPixels) const override;
-
- private:
-  static std::shared_ptr<Image> MakeFromData(const std::string& filePath,
-                                             std::shared_ptr<Data> byteData);
-
-  PngImage(int width, int height, Orientation orientation, std::string filePath,
-           std::shared_ptr<Data> fileData)
-      : Image(width, height, orientation),
-        fileData(std::move(fileData)),
-        filePath(std::move(filePath)) {
+  std::string name() const override {
+    return "DefaultGeometryProcessor";
   }
 
-  std::shared_ptr<Data> fileData;
-  std::string filePath;
+  std::unique_ptr<GLGeometryProcessor> createGLInstance() const override;
+
+ private:
+  DefaultGeometryProcessor(int width, int height);
+
+  void onComputeProcessorKey(BytesKey* bytesKey) const override;
+
+  Attribute position;
+  Attribute coverage;
+
+  int width = 1;
+  int height = 1;
+
+  friend class GLDefaultGeometryProcessor;
 };
 }  // namespace tgfx
