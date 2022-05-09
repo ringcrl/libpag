@@ -120,8 +120,13 @@ static Napi::Number Test(const Napi::CallbackInfo& info) {
   return Napi::Number::New(env, 0);
 }
 
+
 static Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  // 测试方法
   exports.Set(Napi::String::New(env, "test"), Napi::Function::New(env, Test));
+
+  // TODO: PAGFile
+
   return exports;
 }
 
