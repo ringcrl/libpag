@@ -3,6 +3,8 @@ message("--begin complie---")
 project(pag-linux)
 set(CMAKE_CXX_STANDARD 11)
 
+set(CMAKE_VERBOSE_MAKEFILEON ON)
+
 if (APPLE AND NOT IOS)
     SET(CMAKE_SYSTEM_PROCESSOR x86_64)
     SET(CMAKE_OSX_ARCHITECTURES x86_64)
@@ -56,6 +58,6 @@ endif()
 
 target_link_libraries(pag-linux ${libs})
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g -O1")
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g -O1")
+# endif()
