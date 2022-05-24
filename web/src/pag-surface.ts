@@ -1,5 +1,7 @@
 import { AlphaType, ColorType, PAG } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
+import type { PAGGlFrameBuffer } from './core/pag-gl-framebuffer';
+import type { PAGGlTexture } from './core/pag-gl-texture';
 
 @destroyVerify
 @wasmAwaitRewind
@@ -11,13 +13,20 @@ export class PAGSurface {
     return new PAGSurface(wasmIns);
   }
 
-  public static FromTexture(textureID: number, width: number, height: number, flipY: boolean): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromTexture(textureID, width, height, flipY);
+  public static FromTexture(texture: PAGGlTexture, width: number, height: number, flipY: boolean): PAGSurface {
+    texture.makeContextCurrent();
+    const wasmIns = PAGSurface.module._PAGSurface._FromTexture(texture.id, width, height, flipY);
     return new PAGSurface(wasmIns);
   }
 
-  public static FromFrameBuffer(frameBufferID: number, width: number, height: number, flipY: boolean): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromFrameBuffer(frameBufferID, width, height, flipY);
+  public static FromFrameBuffer(
+    frameBuffer: PAGGlFrameBuffer,
+    width: number,
+    height: number,
+    flipY: boolean,
+  ): PAGSurface {
+    frameBuffer.makeContextCurrent();
+    const wasmIns = PAGSurface.module._PAGSurface._FromFrameBuffer(frameBuffer.id, width, height, flipY);
     return new PAGSurface(wasmIns);
   }
 
@@ -67,9 +76,8 @@ export class PAGSurface {
     const rowBytes = this.width() * (colorType === ColorType.ALPHA_8 ? 1 : 4);
     const length = rowBytes * this.height();
     const dataUint8Array = new Uint8Array(length);
-    const numBytes = dataUint8Array.byteLength * dataUint8Array.BYTES_PER_ELEMENT;
-    const dataPtr = PAGSurface.module._malloc(numBytes);
-    const dataOnHeap = new Uint8Array(PAGSurface.module.HEAPU8.buffer, dataPtr, numBytes);
+    const dataPtr = PAGSurface.module._malloc(dataUint8Array.byteLength);
+    const dataOnHeap = new Uint8Array(PAGSurface.module.HEAPU8.buffer, dataPtr, dataUint8Array.byteLength);
     const res = this.wasmIns._readPixels(colorType, alphaType, dataPtr, rowBytes) as boolean;
     dataUint8Array.set(dataOnHeap);
     PAGSurface.module._free(dataPtr);

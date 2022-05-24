@@ -10,6 +10,7 @@ import { PAGSolidLayer } from '../src/pag-solid-layer';
 import { PAGSurface } from '../src/pag-surface';
 import { PAGTextLayer } from '../src/pag-text-layer';
 import * as types from '../src/types';
+import { PAGGlFrameBuffer } from '../src/core/pag-gl-framebuffer';
 
 let PAG: types.PAG;
 let textPagArrayBuffer: ArrayBuffer;
@@ -371,14 +372,12 @@ const PAGSurfaceTest = async () => {
   console.log('PAGSurface FromCanvas:', pagSurface);
   const canvasElement = document.getElementById('pag') as HTMLCanvasElement;
   const gl = canvasElement.getContext('webgl');
-  if (gl instanceof WebGLRenderingContext) {
-    const contextID = PAGSurface.module.GL.registerContext(gl, { majorVersion: 1, minorVersion: 0 });
-    PAGSurface.module.GL.makeContextCurrent(contextID);
-    console.log(
-      'PAGSurface FromFrameBuffer:',
-      PAGSurface.module.PAGSurface.FromFrameBuffer(0, canvasElement.width, canvasElement.height, true),
-    );
-  }
+  if (!gl) return;
+  const pagGlFrameBuffer = PAGGlFrameBuffer.create(gl, 0);
+  console.log(
+    'PAGSurface FromFrameBuffer:',
+    PAGSurface.module.PAGSurface.FromFrameBuffer(pagGlFrameBuffer, canvasElement.width, canvasElement.height, true),
+  );
   console.log('PAGSurface width:', pagSurface.width());
   console.log('PAGSurface height:', pagSurface.height());
   const pagPlayer = PAGPlayer.create();

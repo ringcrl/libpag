@@ -64,6 +64,10 @@ fi
 
 cp -f ../src/wasm/libpag.wasm ../lib
 
+if [ ! -d "../node_modules" ]; then
+  npm install
+fi
+
 $BUILD_TS
 
 echo "-----end-----"
