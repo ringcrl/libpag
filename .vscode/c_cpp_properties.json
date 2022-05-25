@@ -1,13 +1,19 @@
 {
-  "configurations": [
-    {
-      "name": "gcc-node",
-      "includePath": [
-        "/root/.nvm/versions/node/v16.15.0/include/node", // node 本身头文件
-        "/data/github.com/libpag/include", // pag 头文件
-        "/data/github.com/libpag/node/node_modules/node-addon-api" // <napi.h> 头文件
-      ]
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "name": "linux",
+            "includePath": [
+                // "/root/.nvm/versions/node/v14.15.3/include/node", // node
+                // "/data/github.com/libpag/node/node_modules/node-addon-api", // <napi.h>
+                // "/data/github.com/emsdk/upstream/emscripten/cache/sysroot/include", // emcc
+                // web build
+                // "${workspaceFolder}/include",
+                // "${workspaceFolder}/src",
+                // "${workspaceFolder}/tgfx/include/",
+                // "${workspaceFolder}/tgfx/src/"
+            ],
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
 }

@@ -5,7 +5,7 @@
          "type": "lldb",
          "request": "launch",
          "name": "node-pag",
-         "program": "/root/.nvm/versions/node/v16.15.0/bin/node",
+         "program": "/root/.nvm/versions/node/v14.15.3/bin/node",
          "args": [
             "/data/github.com/libpag/node/node-pag.js"
          ]
