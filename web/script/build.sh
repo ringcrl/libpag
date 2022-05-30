@@ -12,10 +12,15 @@ fi
 
 RELEASE_CONF="-Oz -s"
 CMAKE_BUILD_TYPE=Relese
-if [[ $@ == *debug* ]]; then
+if [[ $1 == "debug" ]]; then
   CMAKE_BUILD_TYPE=Debug
   RELEASE_CONF="-O0 -g3 -s SAFE_HEAP=1"
   BUILD_TS=""
+fi
+
+BUILD_ENV="web"
+if [[ $2 == "node" ]]; then
+  BUILD_ENV="node"
 fi
 
 emcmake cmake -S $SOURCE_DIR -B $BUILD_DIR -G Ninja -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE"
@@ -40,7 +45,7 @@ emcc $RELEASE_CONF -std=c++17 \
   -s ERROR_ON_UNDEFINED_SYMBOLS=0 \
   -s MODULARIZE=1 \
   -s NO_EXIT_RUNTIME=1 \
-  -s ENVIRONMENT="node" \
+  -s ENVIRONMENT=$BUILD_ENV \
   -s EXPORT_ES6=1 \
   -s USE_ES6_IMPORT_META=0 \
   -o ../src/wasm/libpag.js

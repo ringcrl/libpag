@@ -36,6 +36,9 @@ export class PAGPlayer {
   public async flush(): Promise<boolean> {
     return (await PAGPlayer.module.webAssemblyQueue.exec(this.wasmIns._flush, this.wasmIns)) as boolean;
   }
+  public flushSync() : boolean {
+    return this.wasmIns._flush()
+  }
   /**
    * [Internal] Apply all pending changes to the target surface immediately. Returns true if the content has
    * changed.

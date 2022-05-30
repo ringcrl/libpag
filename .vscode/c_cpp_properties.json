@@ -1,0 +1,13 @@
+{
+  "configurations": [
+    {
+      "name": "gcc-node",
+      "includePath": [
+        "/root/.nvm/versions/node/v16.15.0/include/node", // node 本身头文件
+        "/data/github.com/libpag/include", // pag 头文件
+        "/data/github.com/libpag/node/node_modules/node-addon-api" // <napi.h> 头文件
+      ]
+    }
+  ],
+  "version": 4
+}

@@ -19,6 +19,8 @@
 #include <pag/file.h>
 #include <pag/pag.h>
 
+#include <chrono>
+
 int64_t GetTimer() {
   static auto START_TIME = std::chrono::high_resolution_clock::now();
   auto now = std::chrono::high_resolution_clock::now();
@@ -26,11 +28,12 @@ int64_t GetTimer() {
   return static_cast<int64_t>(ns.count() * 1e-3);
 }
 
-std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
-  auto pagFile = pag::PAGFile::Load("../../assets/test2.pag");
+std::shared_ptr<pag::PAGFile> ReplaceImageOrText(const char *url) {
+  auto pagFile = pag::PAGFile::Load(url == nullptr ? "/data/github.com/libpag/assets/replacement.pag" : url);
   if (pagFile == nullptr) {
     return nullptr;
   }
+  /*
   for (int i = 0; i < pagFile->numImages(); i++) {
     auto pagImage = pag::PAGImage::FromPath("../../assets/scene.png");
     pagFile->replaceImage(i, pagImage);
@@ -45,6 +48,7 @@ std::shared_ptr<pag::PAGFile> ReplaceImageOrText() {
     textDocumentHandle->fontStyle = pagFont.fontStyle;
     pagFile->replaceText(i, textDocumentHandle);
   }
+  */
 
   return pagFile;
 }
@@ -89,7 +93,7 @@ void BmpWrite(unsigned char* image, int imageWidth, int imageHeight, const char*
   fclose(fp);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   auto startTime = GetTimer();
   // Register fallback fonts. It should be called only once when the application is being initialized.
   std::vector<std::string> fallbackFontPaths = {};
@@ -98,7 +102,7 @@ int main() {
   std::vector<int> ttcIndices(fallbackFontPaths.size());
   pag::PAGFont::SetFallbackFontPaths(fallbackFontPaths, ttcIndices);
 
-  auto pagFile = ReplaceImageOrText();
+  auto pagFile = ReplaceImageOrText(argc == 1 ? nullptr : argv[1]);
   if (pagFile == nullptr) {
     printf("---pagFile is nullptr!!!\n");
     return -1;
@@ -118,19 +122,31 @@ int main() {
 
   int bytesLength = pagFile->width() * pagFile->height() * 4;
 
+  int realFlushCnt = 0;
+  int64_t totalFlushTime = 0;
+  int64_t totalReadTime = 0;
   while (currentFrame <= totalFrames) {
+    auto beginTime = GetTimer();
     pagPlayer->setProgress(currentFrame * 1.0 / totalFrames);
     auto status = pagPlayer->flush();
-
-    printf("---currentFrame:%d, flushStatus:%d \n", currentFrame, status);
+    auto flushTime = GetTimer();
+    if (status) {
+      realFlushCnt++;
+      totalFlushTime += flushTime - beginTime;
+    }
 
     auto data = new uint8_t[bytesLength];
-    pagSurface->readPixels(pag::ColorType::BGRA_8888, pag::AlphaType::Premultiplied, data,
-                           pagFile->width() * 4);
+    // pagSurface->readPixels(pag::ColorType::BGRA_8888, pag::AlphaType::Premultiplied, data,
+    //                        pagFile->width() * 4);
+    auto readTime = GetTimer();
+    totalReadTime += readTime - flushTime;
 
-    std::string imageName = std::to_string(currentFrame);
+    printf("---currentFrame:%ld, flushStatus:%ld, flushElapsed:%ld(us), readElapsed:%ld(us) \n",
+           currentFrame, status, flushTime-beginTime, readTime-flushTime);
 
-    BmpWrite(data, pagFile->width(), pagFile->height(), imageName.c_str());
+    // std::string imageName = std::to_string(currentFrame);
+
+    // BmpWrite(data, pagFile->width(), pagFile->height(), imageName.c_str());
 
     delete[] data;
 
@@ -139,7 +155,8 @@ int main() {
 
   delete pagPlayer;
 
-  printf("----timeCost--:%lld \n", GetTimer() - startTime);
+  // printf("----totalTime--:%ld, avgFlushTime:%ld, avgReadTime:%ld\n",
+  //         GetTimer() - startTime, totalFlushTime/realFlushCnt, totalReadTime/totalFrames);
 
   return 0;
 }
