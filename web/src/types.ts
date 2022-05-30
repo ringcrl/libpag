@@ -15,6 +15,7 @@ import { NativeImage } from './core/native-image';
 import { WebMask } from './core/web-mask';
 import { PAGTextLayer } from './pag-text-layer';
 import { GlobalCanvas } from './core/global-canvas';
+import { BackendContext } from './core/backend-context';
 
 declare global {
   interface Window {
@@ -29,12 +30,21 @@ export interface PAG extends EmscriptenModule {
   };
   _PAGImage: {
     _FromNativeImage: (nativeImage: NativeImage) => any;
+    _FromPixels: (
+      pixels: number,
+      width: number,
+      height: number,
+      rowBytes: number,
+      colorType: ColorType,
+      alphaType: AlphaType,
+    ) => any;
+    _FromTexture: (textureID: number, width: number, height: number, flipY: boolean) => any;
   };
   _PAGPlayer: any;
   _PAGSurface: {
     _FromCanvas: (canvasID: string) => any;
     _FromTexture: (textureID: number, width: number, height: number, flipY: boolean) => any;
-    _FromFrameBuffer: (framebufferID: number, width: number, height: number, flipY: boolean) => any;
+    _FromRenderTarget: (framebufferID: number, width: number, height: number, flipY: boolean) => any;
   };
   _PAGComposition: {
     _Make: (width: number, height: number) => any;
@@ -76,25 +86,37 @@ export interface PAG extends EmscriptenModule {
   ScalerContext: typeof ScalerContext;
   VideoReader: typeof VideoReader;
   GlobalCanvas: typeof GlobalCanvas;
+  BackendContext: typeof BackendContext;
   traceImage: (info: { width: number; height: number }, pixels: Uint8Array, tag: string) => void;
   registerSoftwareDecoderFactory: (factory: SoftwareDecoderFactory) => void;
+  [key: string]: any;
 }
 
 export interface EmscriptenGL {
-  currentContext?: {
-    handle: number;
-    GLctx: WebGLRenderingContext;
-    attributes: { majorVersion: number; minorVersion: number };
-  };
-  textures: WebGLTexture[];
+  contexts: (EmscriptenGLContext | null)[];
   createContext: (
     canvas: HTMLCanvasElement | OffscreenCanvas,
-    webGLContextAttributes: { majorVersion: number; minorVersion: number },
+    webGLContextAttributes: EmscriptenGLContextAttributes,
   ) => number;
-  registerContext: (gl: WebGLRenderingContext, options: { majorVersion: number; minorVersion: number }) => number;
-  makeContextCurrent: (contextId: number) => void;
-  deleteContext: (contextId: number) => void;
+  currentContext?: EmscriptenGLContext;
+  deleteContext: (contextHandle: number) => void;
+  framebuffers: (WebGLFramebuffer | null)[];
+  getContext: (contextHandle: number) => EmscriptenGLContext;
+  getNewId: (array: any[]) => number;
+  makeContextCurrent: (contextHandle: number) => boolean;
+  registerContext: (ctx: WebGLRenderingContext, webGLContextAttributes: EmscriptenGLContextAttributes) => number;
+  textures: (WebGLTexture | null)[];
 }
+
+export interface EmscriptenGLContext {
+  handle: number;
+  GLctx: WebGLRenderingContext;
+  attributes: EmscriptenGLContextAttributes;
+  initExtensionsDone: boolean;
+  version: number;
+}
+
+export type EmscriptenGLContextAttributes = { majorVersion: number; minorVersion: number } & WebGLContextAttributes;
 
 /**
  * Defines the rules on how to scale the content to fit the specified area.
@@ -227,6 +249,55 @@ export const enum DecoderResult {
    * The calling fails.
    */
   Error = -2,
+}
+
+/**
+ * Describes how pixel bits encode color. These values match up with the enum in Bitmap.Config on
+ * Android platform.
+ */
+export const enum ColorType {
+  /**
+   * uninitialized.
+   */
+  Unknown,
+  /**
+   * Each pixel is stored as a single translucency (alpha) channel. This is very useful to
+   * efficiently store masks for instance. No color information is stored. With this configuration,
+   * each pixel requires 1 byte of memory.
+   */
+  ALPHA_8,
+  /**
+   * Each pixel is stored on 4 bytes. Each channel (RGB and alpha for translucency) is stored with 8
+   * bits of precision (256 possible values). The channel order is: red, green, blue, alpha.
+   */
+  RGBA_8888,
+  /**
+   * Each pixel is stored on 4 bytes. Each channel (RGB and alpha for translucency) is stored with 8
+   * bits of precision (256 possible values). The channel order is: blue, green, red, alpha.
+   */
+  BGRA_8888,
+}
+
+/**
+ * Describes how to interpret the alpha component of a pixel.
+ */
+export const enum AlphaType {
+  /**
+   * uninitialized.
+   */
+  Unknown,
+  /**
+   * pixel is opaque.
+   */
+  Opaque,
+  /**
+   * pixel components are premultiplied by alpha.
+   */
+  Premultiplied,
+  /**
+   * pixel components are independent of alpha.
+   */
+  Unpremultiplied,
 }
 
 export interface Point {

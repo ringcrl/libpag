@@ -20,7 +20,7 @@
 
 #include "GLBuffer.h"
 #include "GLDrawer.h"
-#include "core/Path.h"
+#include "tgfx/core/Path.h"
 
 namespace tgfx {
 class GLRRectOp : public GLDrawOp {
@@ -31,7 +31,7 @@ class GLRRectOp : public GLDrawOp {
 
   std::vector<float> vertices(const DrawArgs& args) override;
 
-  std::shared_ptr<GLBuffer> getIndexBuffer(const DrawArgs& args) override;
+  void draw(const DrawArgs& args) override;
 
  private:
   GLRRectOp(const RRect& rRect, const Matrix& viewMatrix);

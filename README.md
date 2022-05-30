@@ -172,15 +172,13 @@ We recommend using CLion IDE on the macOS platform for development.
 
 ### Branch Management
 
-- The `main` branch is our active developing branch. After full testing, we will periodically pull
-  the pre-release branch based on the main branch.
-- The `release` branch is our stable release branch, which is fully tested and already used in many
-  apps.
+- The `main` branch is our active developing branch which contains the latest features and bugfixes. 
+- The branches under `release/` are our stable milestone branches which are fully tested. We will 
+periodically cut a `release/{version}` branch from the `main` branch. After one `release/{version}` 
+branch is cut, only high priority fixes are checked into it.
 
-**Note: This repository only contains the code of PAG 4.0, which is still under active development.
-So there is no `release` branch yet at this moment. We are working hard to make a stable release of
-PAG 4.0 available as soon as possible. For using PAG 3.0 versions, you can download the precompiled
-libraries from [here](https://github.com/Tencent/libpag/releases).**
+**Note: This repository only contains the latest code since PAG 4.0. To use the legacy PAG 3.0 
+versions, you can download the precompiled libraries from [here](https://github.com/Tencent/libpag/releases).**
 
 ### Build Prerequisites
 
@@ -224,9 +222,20 @@ Git account and password may be required during synchronizing. Please make sure 
 
 ### Build
 
-After the synchronization, open the project with CLion, then you are good to go!
+After the synchronization, you can open the project with CLion and build the pag library.
 
-**Note: If anything goes wrong during cmake building, please update the cmake tool to the latest
+**For macOS platform：**
+
+There are no extra configurations of CLion required.
+
+**For Windows platform：**
+
+Please follow the following steps to configure the CLion environment correctly:
+
+- Make sure you have installed at least the **[Desktop development with C++]** and **[Universal Windows Platform development]** components for VS2019.
+- Open the **File->Setting** panel, and go to **Build, Execution, Deployment->ToolChains**, then set the toolchain of CLion to **Visual Studio** with **amd64 (Recommended)** or **x86** architecture.
+
+**Note: If anything goes wrong during cmake building, please update the cmake commandline tool to the latest
 version and try again.**
 
 ## License

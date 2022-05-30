@@ -36,7 +36,7 @@ class GLFillRectOp : public GLDrawOp {
 
   std::vector<float> vertices(const DrawArgs& args) override;
 
-  std::shared_ptr<GLBuffer> getIndexBuffer(const DrawArgs& args) override;
+  void draw(const DrawArgs& args) override;
 
  private:
   GLFillRectOp(std::vector<Rect> rects, std::vector<Matrix> viewMatrices,

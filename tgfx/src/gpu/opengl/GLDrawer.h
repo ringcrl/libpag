@@ -20,11 +20,11 @@
 
 #include "GLBuffer.h"
 #include "GLContext.h"
-#include "core/BlendMode.h"
 #include "gpu/AAType.h"
 #include "gpu/FragmentProcessor.h"
 #include "gpu/GeometryProcessor.h"
-#include "gpu/opengl/GLRenderTarget.h"
+#include "tgfx/core/BlendMode.h"
+#include "tgfx/gpu/opengl/GLRenderTarget.h"
 
 namespace tgfx {
 struct DrawArgs {
@@ -46,7 +46,7 @@ class GLDrawOp {
 
   virtual std::vector<float> vertices(const DrawArgs& args) = 0;
 
-  virtual std::shared_ptr<GLBuffer> getIndexBuffer(const DrawArgs& args) = 0;
+  virtual void draw(const DrawArgs& args) = 0;
 
   const Rect& bounds() const {
     return _bounds;
@@ -70,6 +70,10 @@ class GLDrawer : public Resource {
   static std::shared_ptr<GLDrawer> Make(Context* context);
 
   void draw(DrawArgs args, std::unique_ptr<GLDrawOp> op) const;
+
+  static void DrawIndexBuffer(Context* context, const std::shared_ptr<GLBuffer>& indexBuffer);
+
+  static void DrawArrays(Context* context, unsigned mode, int first, int count);
 
  protected:
   void computeRecycleKey(BytesKey*) const override;

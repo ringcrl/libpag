@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 4.0.5.6
+
+### Feature
+
+- 在 WebMask 中实现 font style
+
+## 4.0.5.5
+
+### Feature
+
+- 发布 PAG Web SDK 正式版🎉
+- 更新到 4.0.5.5 与 libpag 的版本号同步
+
+### Bug Fixes
+
+- 修复视频序列帧状态检查错误，上屏失败
+
+## 0.1.8
+
+### Feature
+
+- 支持从 `offscreenCanvas` 创建 `PAGView`
+- `PAGSurface` 上增加 `readPixels` 接口
+
+### BugFixes
+
+- 修复缓存没有生效的问题
+
 ## 0.1.7
 
 ### Feature

@@ -20,15 +20,16 @@
 #include "GLFillRectOp.h"
 #include "GLRRectOp.h"
 #include "GLSurface.h"
-#include "core/Mask.h"
-#include "core/PathEffect.h"
-#include "core/TextBlob.h"
 #include "core/utils/MathExtra.h"
 #include "gpu/AARectEffect.h"
 #include "gpu/AlphaFragmentProcessor.h"
 #include "gpu/ColorShader.h"
 #include "gpu/TextureFragmentProcessor.h"
 #include "gpu/TextureMaskFragmentProcessor.h"
+#include "gpu/opengl/GLTriangulatingPathOp.h"
+#include "tgfx/core/Mask.h"
+#include "tgfx/core/PathEffect.h"
+#include "tgfx/core/TextBlob.h"
 
 namespace tgfx {
 GLCanvas::GLCanvas(Surface* surface) : Canvas(surface) {
@@ -44,24 +45,24 @@ void GLCanvas::drawTexture(const Texture* texture, const Texture* mask, bool inv
 }
 
 Texture* GLCanvas::getClipTexture() {
-  if (_clipMask == nullptr) {
-    _clipMask = Mask::Make(surface->width(), surface->height());
+  if (_clipSurface == nullptr) {
+    _clipSurface = Surface::Make(getContext(), surface->width(), surface->height(), true);
+    if (_clipSurface == nullptr) {
+      _clipSurface = Surface::Make(getContext(), surface->width(), surface->height());
+    }
   }
-  if (_clipMask == nullptr) {
+  if (_clipSurface == nullptr) {
     return nullptr;
   }
   if (clipID != state->clipID) {
-    _clipMask = Mask::Make(surface->width(), surface->height());
-    _clipMask->fillPath(state->clip);
+    auto clipCanvas = _clipSurface->getCanvas();
+    clipCanvas->clear();
+    Paint paint = {};
+    paint.setColor(Color::Black());
+    clipCanvas->drawPath(state->clip, paint);
     clipID = state->clipID;
-    // recycle the clip texture.
-    _clipTexture = nullptr;
-    _clipTexture = _clipMask->makeTexture(getContext());
   }
-  if (_clipTexture == nullptr) {
-    _clipTexture = _clipMask->makeTexture(getContext());
-  }
-  return _clipTexture.get();
+  return _clipSurface->getTexture().get();
 }
 
 static constexpr float BOUNDS_TO_LERANCE = 1e-3f;
@@ -186,12 +187,26 @@ void GLCanvas::fillPath(const Path& path, const Shader* shader) {
   if (localBounds.isEmpty()) {
     return;
   }
-  auto op = MakeSimplePathOp(path, getViewMatrix());
+  auto viewMatrix = getViewMatrix();
+  auto op = MakeSimplePathOp(path, viewMatrix);
   if (op) {
     auto localMatrix = Matrix::MakeScale(bounds.width(), bounds.height());
     localMatrix.postTranslate(bounds.x(), bounds.y());
     auto args = FPArgs(getContext(), localMatrix);
     draw(std::move(op), shader->asFragmentProcessor(args));
+    return;
+  }
+  auto tempPath = path;
+  tempPath.transform(viewMatrix);
+  op = GLTriangulatingPathOp::Make(tempPath, state->clip.getBounds());
+  if (op) {
+    auto localMatrix = Matrix::I();
+    viewMatrix.invert(&localMatrix);
+    save();
+    resetMatrix();
+    auto args = FPArgs(getContext(), localMatrix);
+    draw(std::move(op), shader->asFragmentProcessor(args));
+    restore();
     return;
   }
   auto deviceBounds = state->matrix.mapRect(localBounds);
@@ -352,6 +367,9 @@ void GLCanvas::drawAtlas(const Texture* atlas, const Matrix matrix[], const Rect
       colorVector.push_back(colors[i]);
     }
     setMatrix(totalMatrix);
+  }
+  if (rects.empty()) {
+    return;
   }
   std::unique_ptr<FragmentProcessor> colorFP;
   std::unique_ptr<FragmentProcessor> maskFP;

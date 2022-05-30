@@ -21,7 +21,9 @@
 
 namespace tgfx {
 std::shared_ptr<Shader> Shader::MakeColorShader(Color color) {
-  return std::make_shared<ColorShader>(color);
+  auto shader = std::make_shared<ColorShader>(color);
+  shader->weakThis = shader;
+  return shader;
 }
 
 bool ColorShader::isOpaque() const {

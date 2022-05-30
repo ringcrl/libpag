@@ -17,13 +17,13 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <thread>
-#include "core/Image.h"
 #include "framework/pag_test.h"
 #include "framework/utils/PAGTestUtils.h"
-#include "gpu/Surface.h"
-#include "gpu/opengl/GLDevice.h"
 #include "nlohmann/json.hpp"
 #include "pag/pag.h"
+#include "tgfx/core/Image.h"
+#include "tgfx/gpu/Surface.h"
+#include "tgfx/gpu/opengl/GLDevice.h"
 
 namespace pag {
 using namespace tgfx;
@@ -150,8 +150,9 @@ PAG_TEST_F(PAGImageTest, BottomLeftMask) {
   auto image1 = Image::MakeFrom("../resources/apitest/imageReplacement.webp")
                     ->makeBuffer()
                     ->makeTexture(context);
-  auto image2 =
-      Image::MakeFrom("../resources/apitest/image_as_mask.png")->makeBuffer()->makeTexture(context);
+  auto imageAsMask = Image::MakeFrom("../resources/apitest/image_as_mask.png");
+  ASSERT_TRUE(imageAsMask != nullptr);
+  auto image2 = imageAsMask->makeBuffer()->makeTexture(context);
   image2->_origin = tgfx::ImageOrigin::BottomLeft;
   auto canvas = surface->getCanvas();
   canvas->drawTexture(image1.get(), image2.get(), false);

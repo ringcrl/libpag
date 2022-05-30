@@ -1,4 +1,4 @@
-import { PAG } from './types';
+import { AlphaType, ColorType, PAG } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
 
 @destroyVerify
@@ -16,8 +16,8 @@ export class PAGSurface {
     return new PAGSurface(wasmIns);
   }
 
-  public static FromFrameBuffer(frameBufferID: number, width: number, height: number, flipY: boolean): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromFrameBuffer(frameBufferID, width, height, flipY);
+  public static FromRenderTarget(frameBufferID: number, width: number, height: number, flipY: boolean): PAGSurface {
+    const wasmIns = PAGSurface.module._PAGSurface._FromRenderTarget(frameBufferID, width, height, flipY);
     return new PAGSurface(wasmIns);
   }
 
@@ -57,6 +57,22 @@ export class PAGSurface {
    */
   public freeCache(): void {
     this.wasmIns._freeCache();
+  }
+  /**
+   * Copies pixels from current PAGSurface to dstPixels with specified color type, alpha type and
+   * row bytes. Returns true if pixels are copied to dstPixels.
+   */
+  public readPixels(colorType: ColorType, alphaType: AlphaType): Uint8Array | null {
+    if (colorType === ColorType.Unknown) return null;
+    const rowBytes = this.width() * (colorType === ColorType.ALPHA_8 ? 1 : 4);
+    const length = rowBytes * this.height();
+    const dataUint8Array = new Uint8Array(length);
+    const dataPtr = PAGSurface.module._malloc(dataUint8Array.byteLength);
+    const dataOnHeap = new Uint8Array(PAGSurface.module.HEAPU8.buffer, dataPtr, dataUint8Array.byteLength);
+    const res = this.wasmIns._readPixels(colorType, alphaType, dataPtr, rowBytes) as boolean;
+    dataUint8Array.set(dataOnHeap);
+    PAGSurface.module._free(dataPtr);
+    return res ? dataUint8Array : null;
   }
 
   public destroy(): void {

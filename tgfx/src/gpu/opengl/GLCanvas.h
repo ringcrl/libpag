@@ -19,10 +19,10 @@
 #pragma once
 
 #include "GLDrawer.h"
-#include "core/BlendMode.h"
-#include "core/Mask.h"
-#include "gpu/Canvas.h"
 #include "gpu/CanvasState.h"
+#include "tgfx/core/BlendMode.h"
+#include "tgfx/core/Mask.h"
+#include "tgfx/gpu/Canvas.h"
 
 namespace tgfx {
 class GLCanvas : public Canvas {
@@ -49,8 +49,7 @@ class GLCanvas : public Canvas {
   }
 
  private:
-  std::shared_ptr<Mask> _clipMask = nullptr;
-  std::shared_ptr<Texture> _clipTexture = nullptr;
+  std::shared_ptr<Surface> _clipSurface = nullptr;
   uint32_t clipID = kDefaultClipID;
   std::shared_ptr<GLDrawer> _drawer = nullptr;
 

@@ -6,10 +6,22 @@ import { PAGFile } from './pag-file';
 import { destroyVerify } from './utils/decorators';
 import { Log } from './utils/log';
 import { ErrorCode } from './utils/error-map';
+import { isOffscreenCanvas } from './utils/type-utils';
+import { BackendContext } from './core/backend-context';
 
 export interface PAGViewOptions {
+  /**
+   * Use style to scale canvas. default false.
+   * When target canvas is offscreen canvas, useScale is false.
+   */
   useScale?: boolean;
+  /**
+   * Can choose Canvas2D mode in chrome. default false.
+   */
   useCanvas2D?: boolean;
+  /**
+   * Render first frame when pag view init. default true.
+   */
   firstFrame?: boolean;
 }
 
@@ -19,16 +31,22 @@ export class PAGView {
 
   /**
    * Create pag view.
+   * @param file pag file.
+   * @param canvas target render canvas.
+   * @param initOptions pag view options
+   * @returns
    */
   public static async init(
     file: PAGFile,
-    canvas: string | HTMLCanvasElement,
+    canvas: string | HTMLCanvasElement | OffscreenCanvas,
     initOptions: PAGViewOptions = {},
   ): Promise<PAGView | undefined> {
-    let canvasElement: HTMLCanvasElement | null = null;
+    let canvasElement: HTMLCanvasElement | OffscreenCanvas | null = null;
     if (typeof canvas === 'string') {
       canvasElement = document.getElementById(canvas.substr(1)) as HTMLCanvasElement;
     } else if (canvas instanceof HTMLCanvasElement) {
+      canvasElement = canvas;
+    } else if (isOffscreenCanvas(canvas)) {
       canvasElement = canvas;
     }
     if (!canvasElement) {
@@ -40,34 +58,28 @@ export class PAGView {
 
       if (pagView.pagViewOptions.useCanvas2D) {
         this.module.globalCanvas.retain();
-        pagView.contextID = this.module.globalCanvas.contextID;
+        if (!this.module.globalCanvas.glContext) throw new Error('GlobalCanvas context is not WebGL!');
+        pagView.pagGlContext = BackendContext.from(this.module.globalCanvas.glContext);
       } else {
-        pagView.contextID = this.module.GL.createContext(canvasElement, { majorVersion: 1, minorVersion: 0 });
+        const gl = canvasElement.getContext('webgl');
+        if (!gl) throw new Error('Canvas context is not WebGL!');
+        pagView.pagGlContext = BackendContext.from(gl);
       }
-
-      if (pagView.contextID === 0) {
-        Log.errorByCode(ErrorCode.CanvasContextIsNotWebGL);
-      } else {
-        pagView.resetSize(pagView.pagViewOptions.useScale);
-        pagView.frameRate = file.frameRate();
-        pagView.pagSurface = this.makePAGSurface(pagView.contextID, pagView.rawWidth, pagView.rawHeight);
-        pagView.player.setSurface(pagView.pagSurface);
-        pagView.player.setComposition(file);
-        pagView.setProgress(0);
-        if (pagView.pagViewOptions.firstFrame) await pagView.flush();
-        return pagView;
-      }
+      pagView.resetSize(pagView.pagViewOptions.useScale);
+      pagView.frameRate = file.frameRate();
+      pagView.pagSurface = this.makePAGSurface(pagView.pagGlContext, pagView.rawWidth, pagView.rawHeight);
+      pagView.player.setSurface(pagView.pagSurface);
+      pagView.player.setComposition(file);
+      pagView.setProgress(0);
+      if (pagView.pagViewOptions.firstFrame) await pagView.flush();
+      return pagView;
     }
   }
 
-  private static makePAGSurface(contextID: number, width: number, height: number): PAGSurface {
-    const oldHandle = this.module.GL.currentContext?.handle || 0;
-    this.module.GL.makeContextCurrent(contextID);
-    const pagSurface = PAGSurface.FromFrameBuffer(0, width, height, true);
-    this.module.GL.makeContextCurrent(0);
-    if (oldHandle) {
-      this.module.GL.makeContextCurrent(oldHandle);
-    }
+  private static makePAGSurface(pagGlContext: BackendContext, width: number, height: number): PAGSurface {
+    if (!pagGlContext.makeCurrent()) throw new Error('Make context current fail!');
+    const pagSurface = PAGSurface.FromRenderTarget(0, width, height, true);
+    pagGlContext.clearCurrent();
     return pagSurface;
   }
 
@@ -88,11 +100,11 @@ export class PAGView {
   private playTime = 0;
   private timer: number | null = null;
   private player: PAGPlayer;
-  private pagSurface: PAGSurface | undefined;
+  private pagSurface: PAGSurface | null = null;
   private repeatedTimes = 0;
   private eventManager: EventManager = new EventManager();
-  private contextID = 0;
-  private canvasElement: HTMLCanvasElement | null;
+  private pagGlContext: BackendContext | null = null;
+  private canvasElement: HTMLCanvasElement | OffscreenCanvas | null;
   private canvasContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null | undefined;
   private rawWidth = 0;
   private rawHeight = 0;
@@ -104,7 +116,7 @@ export class PAGView {
     firstFrame: true,
   };
 
-  public constructor(pagPlayer: PAGPlayer, canvasElement: HTMLCanvasElement) {
+  public constructor(pagPlayer: PAGPlayer, canvasElement: HTMLCanvasElement | OffscreenCanvas) {
     this.player = pagPlayer;
     this.canvasElement = canvasElement;
   }
@@ -307,7 +319,8 @@ export class PAGView {
     }
     this.rawWidth = this.canvasElement.width;
     this.rawHeight = this.canvasElement.height;
-    const pagSurface = PAGView.makePAGSurface(this.contextID, this.rawWidth, this.rawHeight);
+    if (!this.pagGlContext) return null;
+    const pagSurface = PAGView.makePAGSurface(this.pagGlContext, this.rawWidth, this.rawHeight);
     this.player.setSurface(pagSurface);
     this.pagSurface?.destroy();
     this.pagSurface = pagSurface;
@@ -319,12 +332,9 @@ export class PAGView {
     this.pagSurface?.destroy();
     if (this.pagViewOptions.useCanvas2D) {
       PAGView.module.globalCanvas.release();
-    } else {
-      if (this.contextID > 0) {
-        PAGView.module.GL.deleteContext(this.contextID);
-      }
     }
-    this.contextID = 0;
+    this.pagGlContext?.destroy();
+    this.pagGlContext = null;
     this.canvasContext = null;
     this.canvasElement = null;
     this.isDestroyed = true;
@@ -378,14 +388,15 @@ export class PAGView {
       return;
     }
 
-    if (!useScale) {
+    if (!useScale || isOffscreenCanvas(this.canvasElement)) {
       this.rawWidth = this.canvasElement.width;
       this.rawHeight = this.canvasElement.height;
       return;
     }
 
     let displaySize: { width: number; height: number };
-    const styleDeclaration = window.getComputedStyle(this.canvasElement, null);
+    const canvas = this.canvasElement as HTMLCanvasElement;
+    const styleDeclaration = window.getComputedStyle(canvas, null);
     const computedSize = {
       width: Number(styleDeclaration.width.replace('px', '')),
       height: Number(styleDeclaration.height.replace('px', '')),
@@ -394,24 +405,24 @@ export class PAGView {
       displaySize = computedSize;
     } else {
       const styleSize = {
-        width: Number(this.canvasElement.style.width.replace('px', '')),
-        height: Number(this.canvasElement.style.height.replace('px', '')),
+        width: Number(canvas.style.width.replace('px', '')),
+        height: Number(canvas.style.height.replace('px', '')),
       };
       if (styleSize.width > 0 && styleSize.height > 0) {
         displaySize = styleSize;
       } else {
         displaySize = {
-          width: this.canvasElement.width,
-          height: this.canvasElement.height,
+          width: canvas.width,
+          height: canvas.height,
         };
       }
     }
 
-    this.canvasElement.style.width = `${displaySize.width}px`;
-    this.canvasElement.style.height = `${displaySize.height}px`;
+    canvas.style.width = `${displaySize.width}px`;
+    canvas.style.height = `${displaySize.height}px`;
     this.rawWidth = displaySize.width * window.devicePixelRatio;
     this.rawHeight = displaySize.height * window.devicePixelRatio;
-    this.canvasElement.width = this.rawWidth;
-    this.canvasElement.height = this.rawHeight;
+    canvas.width = this.rawWidth;
+    canvas.height = this.rawHeight;
   }
 }
