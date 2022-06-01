@@ -75,3 +75,7 @@ linux/vendor
 linux_out
 node/vendor
 node/out
+
+
+vendor_tools/
+.vscode

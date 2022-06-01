@@ -40,7 +40,7 @@ export class PAGFile extends PAGComposition {
   public static loadFromBuffer(buffer: ArrayBuffer) {
     if (!buffer || !(buffer.byteLength > 0)) Log.errorByCode(ErrorCode.PagFileDataEmpty);
     const dataUint8Array = new Uint8Array(buffer);
-    const numBytes = dataUint8Array.byteLength * dataUint8Array.BYTES_PER_ELEMENT;
+    const numBytes = dataUint8Array.byteLength;
     const dataPtr = this.module._malloc(numBytes);
     const dataOnHeap = new Uint8Array(this.module.HEAPU8.buffer, dataPtr, numBytes);
     dataOnHeap.set(dataUint8Array);
@@ -117,6 +117,14 @@ export class PAGFile extends PAGComposition {
       default:
         return proxyVector(vector, PAGLayer);
     }
+  }
+  /**
+   * Returns the indices of the editable layers in this PAGFile.
+   * If the editableIndex of a PAGLayer is not present in the returned indices, the PAGLayer should
+   * not be treated as editable.
+   */
+  public getEditableIndices(layerType: LayerType)  {
+    return this.wasmIns._getEditableIndices(layerType) as Vector<number>;
   }
   /**
    * Indicate how to stretch the original duration to fit target duration when file's duration is

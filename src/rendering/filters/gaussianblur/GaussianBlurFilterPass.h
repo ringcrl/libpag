@@ -18,29 +18,36 @@
 
 #pragma once
 
-#include "pag/file.h"
-#include "pag/pag.h"
+#include "GaussianBlurDefines.h"
+#include "rendering/filters/LayerFilter.h"
 
 namespace pag {
-class PAGImageHolder {
+class GaussianBlurFilterPass : public LayerFilter {
  public:
-  bool hasImage(int editableIndex) const;
+  explicit GaussianBlurFilterPass(BlurOptions options);
+  ~GaussianBlurFilterPass() override = default;
 
-  std::shared_ptr<PAGImage> getImage(int editableIndex) const;
+  void updateParams(float blurValue, float scale, bool isExpendBoundsValue);
 
-  void setImage(int editableIndex, std::shared_ptr<PAGImage> image, PAGLayer* layerOwner);
+ protected:
+  std::string onBuildFragmentShader() override;
 
-  PAGLayer* getOwner(int editableIndex) const;
+  void onPrepareProgram(tgfx::Context* context, unsigned program) override;
 
-  void addLayer(PAGLayer* layer);
+  void onUpdateParams(tgfx::Context* context, const tgfx::Rect& contentBounds,
+                      const tgfx::Point& filterScale) override;
 
-  void removeLayer(PAGLayer* layer);
-
-  std::vector<PAGLayer*> getLayers(int editableIndex);
+  std::vector<tgfx::Point> computeVertices(const tgfx::Rect& contentBounds,
+                                           const tgfx::Rect& transformedBounds,
+                                           const tgfx::Point& filterScale) override;
 
  private:
-  std::unordered_map<int, std::shared_ptr<PAGImage>> imageMap;
-  std::unordered_map<int, PAGLayer*> ownerMap;
-  std::vector<PAGLayer*> imageLayers;
+  int stepHandle = -1;
+  int offsetHandle = -1;
+
+  BlurOptions options = BlurOptions::None;
+  float blurriness = 0.0;
+  float scale = 1.0;
+  bool isExpendBounds = false;
 };
 }  // namespace pag
