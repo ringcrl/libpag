@@ -51,12 +51,13 @@ struct StrokePaint {
     return tgfx::Stroke(strokeWidth, ToTGFXCap(lineCap), ToTGFXJoin(lineJoin), miterLimit);
   }
 
-  float strokeWidth;
-  Enum lineCap;
-  Enum lineJoin;
-  float miterLimit;
+  float strokeWidth = 0;
+  Enum lineCap = LineCap::Butt;
+  Enum lineJoin = LineJoin::Miter;
+  float miterLimit = 0;
   std::vector<float> dashes;
-  float dashOffset;
+  float dashOffset = 0;
+  tgfx::Matrix matrix = tgfx::Matrix::I();
 };
 
 class PaintElement : public ElementData {
@@ -84,7 +85,7 @@ class PaintElement : public ElementData {
     if (paintType == PaintType::Fill || paintType == PaintType::GradientFill) {
       return;
     }
-    stroke.strokeWidth *= fabsf(matrix.getMaxScale());
+    stroke.matrix.postConcat(matrix);
   }
 
   PaintType paintType = PaintType::Fill;
@@ -227,21 +228,30 @@ static void ConvertPolyStarToPath(tgfx::Path* path, float centerX, float centerY
   }
 
   // Move to the first point.
-  auto lastDx = outerRadius * cosf(currentAngle);
-  auto lastDy = outerRadius * sinf(currentAngle);
+  auto firstDx = outerRadius * cosf(currentAngle);
+  auto firstDy = outerRadius * sinf(currentAngle);
+  auto lastDx = firstDx;
+  auto lastDy = firstDy;
   path->moveTo(lastDx + centerX, lastDy + centerY);
 
   auto outerFlag = false;
-  for (int i = 0; i < numPoints - 1; i++) {
-    auto radius = outerFlag ? outerRadius : innerRadius;
+  for (int i = 0; i < numPoints; i++) {
     auto angleDelta = angleStep * direction;
-    if (i == decimalIndex || i == decimalIndex + 1) {
-      radius = innerRadius + decimalPart * (radius - innerRadius);
-      angleDelta *= decimalPart;
+    float dx;
+    float dy;
+    if (i == numPoints - 1) {
+      dx = firstDx;
+      dy = firstDy;
+    } else {
+      auto radius = outerFlag ? outerRadius : innerRadius;
+      if (i == decimalIndex || i == decimalIndex + 1) {
+        radius = innerRadius + decimalPart * (radius - innerRadius);
+        angleDelta *= decimalPart;
+      }
+      currentAngle += angleDelta;
+      dx = radius * cosf(currentAngle);
+      dy = radius * sinf(currentAngle);
     }
-    currentAngle += angleDelta;
-    auto dx = radius * cosf(currentAngle);
-    auto dy = radius * sinf(currentAngle);
     if (innerRoundness != 0 || outerRoundness != 0) {
       float lastRoundness, roundness;
       if (outerFlag) {
@@ -271,18 +281,27 @@ static void ConvertPolygonToPath(tgfx::Path* path, float centerX, float centerY,
   auto currentAngle = (rotation - 90) * static_cast<float>(M_PI) / 180;
 
   // Move to the first point.
-  auto lastDx = radius * cosf(currentAngle);
-  auto lastDy = radius * sinf(currentAngle);
+  auto firstDx = radius * cosf(currentAngle);
+  auto firstDy = radius * sinf(currentAngle);
+  auto lastDx = firstDx;
+  auto lastDy = firstDy;
   path->moveTo(lastDx + centerX, lastDy + centerY);
 
   auto outerFlag = false;
-  for (int i = 0; i < numPoints - 1; i++) {
+  for (int i = 0; i < numPoints; i++) {
     auto angleDelta = angleStep * direction;
-    currentAngle += angleDelta;
-    auto dx = radius * cosf(currentAngle);
-    auto dy = radius * sinf(currentAngle);
+    float dx;
+    float dy;
+    if (i == numPoints - 1) {
+      dx = firstDx;
+      dy = firstDy;
+    } else {
+      currentAngle += angleDelta;
+      dx = radius * cosf(currentAngle);
+      dy = radius * sinf(currentAngle);
+    }
     if (roundness != 0) {
-      AddCurveToPath(path, centerX, centerY, angleDelta * 0.5f, lastDx, lastDy, roundness, dx, dy,
+      AddCurveToPath(path, centerX, centerY, angleDelta * 0.25f, lastDx, lastDy, roundness, dx, dy,
                      roundness);
       lastDx = dx;
       lastDy = dy;
@@ -336,7 +355,7 @@ PaintElement* FillToPaint(FillElement* fill, Frame frame) {
   return paint;
 }
 
-PaintElement* StrokeToPaint(StrokeElement* stroke, Frame frame) {
+PaintElement* StrokeToPaint(StrokeElement* stroke, const tgfx::Matrix& matrix, Frame frame) {
   if (stroke->opacity->getValueAt(frame) <= 0 || stroke->strokeWidth->getValueAt(frame) <= 0) {
     return nullptr;
   }
@@ -355,6 +374,7 @@ PaintElement* StrokeToPaint(StrokeElement* stroke, Frame frame) {
     }
     paint->stroke.dashOffset = stroke->dashOffset->getValueAt(frame);
   }
+  paint->stroke.matrix = matrix;
   return paint;
 }
 
@@ -501,6 +521,7 @@ PaintElement* GradientStrokeToPaint(GradientStrokeElement* stroke, const tgfx::M
     }
     paint->stroke.dashOffset = stroke->dashOffset->getValueAt(frame);
   }
+  paint->stroke.matrix = matrix;
   paint->gradient = MakeGradientPaint(stroke->fillType, stroke->startPoint->getValueAt(frame),
                                       stroke->endPoint->getValueAt(frame),
                                       stroke->colors->getValueAt(frame), matrix);
@@ -810,10 +831,10 @@ void RenderElements_Fill(ShapeElement* element, const tgfx::Matrix&, GroupElemen
   }
 }
 
-void RenderElements_Stroke(ShapeElement* element, const tgfx::Matrix&, GroupElement* parentGroup,
-                           Frame frame) {
+void RenderElements_Stroke(ShapeElement* element, const tgfx::Matrix& parentMatrix,
+                           GroupElement* parentGroup, Frame frame) {
   auto stroke = static_cast<StrokeElement*>(element);
-  auto paint = StrokeToPaint(stroke, frame);
+  auto paint = StrokeToPaint(stroke, parentMatrix, frame);
   if (paint != nullptr) {
     parentGroup->elements.push_back(paint);
   }
@@ -907,15 +928,33 @@ std::unique_ptr<tgfx::PathEffect> CreateDashEffect(const std::vector<float>& das
 }
 
 void ApplyStrokeToPath(tgfx::Path* path, const StrokePaint& stroke) {
+  std::vector<std::unique_ptr<tgfx::PathEffect>> effects;
   if (!stroke.dashes.empty()) {
     auto dashEffect = CreateDashEffect(stroke.dashes, stroke.dashOffset);
     if (dashEffect) {
-      dashEffect->applyTo(path);
+      effects.emplace_back(std::move(dashEffect));
     }
   }
   auto strokeEffect = tgfx::PathEffect::MakeStroke(stroke.getStroke());
   if (strokeEffect) {
-    strokeEffect->applyTo(path);
+    effects.emplace_back(std::move(strokeEffect));
+  }
+  if (effects.empty()) {
+    return;
+  }
+  auto applyMatrix = false;
+  if (!stroke.matrix.isIdentity()) {
+    auto matrix = tgfx::Matrix::I();
+    if (stroke.matrix.invert(&matrix)) {
+      path->transform(matrix);
+      applyMatrix = true;
+    }
+  }
+  for (const auto& effect : effects) {
+    effect->applyTo(path);
+  }
+  if (applyMatrix) {
+    path->transform(stroke.matrix);
   }
 }
 
