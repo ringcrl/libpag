@@ -8,6 +8,10 @@ source "/Users/ringcrl/Documents/github/emsdk/emsdk_env.sh"
 
 # 编译
 cd script
+
+# 先删除历史构建产物
+rm -rf /data/github.com/libpag/build
+
 # debug 版本
 ./build.sh debug web
 ./build.sh debug node
