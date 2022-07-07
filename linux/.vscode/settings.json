@@ -9,5 +9,6 @@
     "tuple": "cpp",
     "type_traits": "cpp",
     "utility": "cpp"
-  }
+  },
+  "cmake.cmakePath": "/usr/local/bin/cmake"
 }
