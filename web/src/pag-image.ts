@@ -1,11 +1,12 @@
-import { AlphaType, ColorType, Matrix, PAG, PAGScaleMode } from './types';
+import { AlphaType, ColorType, PAGScaleMode } from './types';
 import { NativeImage } from './core/native-image';
 import { wasmAwaitRewind, wasmAsyncMethod, destroyVerify } from './utils/decorators';
+import { PAGModule } from './binding';
+import { Matrix } from './core/matrix';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGImage {
-  public static module: PAG;
   /**
    * Create pag image from image file.
    */
@@ -34,7 +35,8 @@ export class PAGImage {
    */
   public static fromSource(source: TexImageSource): PAGImage {
     const nativeImage = new NativeImage(source);
-    const wasmIns = this.module._PAGImage._FromNativeImage(nativeImage);
+    const wasmIns = PAGModule._PAGImage._FromNativeImage(nativeImage);
+    if (!wasmIns) throw new Error('Make PAGImage from source fail!');
     return new PAGImage(wasmIns);
   }
   /**
@@ -48,10 +50,11 @@ export class PAGImage {
     alphaType: AlphaType,
   ): PAGImage {
     const rowBytes = width * (colorType === ColorType.ALPHA_8 ? 1 : 4);
-    const dataPtr = PAGImage.module._malloc(pixels.byteLength);
-    const dataOnHeap = new Uint8Array(PAGImage.module.HEAPU8.buffer, dataPtr, pixels.byteLength);
+    const dataPtr = PAGModule._malloc(pixels.byteLength);
+    const dataOnHeap = new Uint8Array(PAGModule.HEAPU8.buffer, dataPtr, pixels.byteLength);
     dataOnHeap.set(pixels);
-    const wasmIns = this.module._PAGImage._FromPixels(dataPtr, width, height, rowBytes, colorType, alphaType);
+    const wasmIns = PAGModule._PAGImage._FromPixels(dataPtr, width, height, rowBytes, colorType, alphaType);
+    if (!wasmIns) throw new Error('Make PAGImage from pixels fail!');
     return new PAGImage(wasmIns);
   }
   /**
@@ -59,7 +62,9 @@ export class PAGImage {
    * invalid.
    */
   public static fromTexture(textureID: number, width: number, height: number, flipY: boolean) {
-    return new PAGImage(PAGImage.module._PAGImage._FromTexture(textureID, width, height, flipY));
+    const wasmIns = PAGModule._PAGImage._FromTexture(textureID, width, height, flipY);
+    if (!wasmIns) throw new Error('Make PAGImage from texture fail!');
+    return new PAGImage(wasmIns);
   }
 
   public wasmIns;
@@ -97,14 +102,16 @@ export class PAGImage {
    * Returns a copy of current matrix.
    */
   public matrix(): Matrix {
-    return this.wasmIns._matrix() as Matrix;
+    const wasmIns = this.wasmIns._matrix();
+    if (!wasmIns) throw new Error('Get matrix fail!');
+    return new Matrix(wasmIns);
   }
   /**
    * Set the transformation which will be applied to the content.
    * The scaleMode property will be set to PAGScaleMode::None when this method is called.
    */
   public setMatrix(matrix: Matrix) {
-    this.wasmIns._setMatrix(matrix);
+    this.wasmIns._setMatrix(matrix.wasmIns);
   }
   /**
    * Destroy the pag image.

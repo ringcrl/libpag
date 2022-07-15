@@ -1,20 +1,22 @@
+import { PAGModule } from './binding';
 import { PAGFont } from './pag-font';
 import { PAGLayer } from './pag-layer';
-import { Color, TextDocument } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
+
+import type { Color, TextDocument } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGTextLayer extends PAGLayer {
-  public static Make(
+  public static make(
     duration: number,
     text: string,
     fontSize: number,
     fontFamily: string,
     fontStyle: string,
   ): PAGTextLayer;
-  public static Make(duration: number, textDocumentHandle: TextDocument): PAGTextLayer;
-  public static Make(
+  public static make(duration: number, textDocumentHandle: TextDocument): PAGTextLayer;
+  public static make(
     duration: number,
     text: string | TextDocument,
     fontSize = 0,
@@ -22,9 +24,9 @@ export class PAGTextLayer extends PAGLayer {
     fontStyle = '',
   ): PAGTextLayer {
     if (typeof text === 'string') {
-      return new PAGTextLayer(this.module._PAGTextLayer._Make(duration, text, fontSize, fontFamily, fontStyle));
+      return new PAGTextLayer(PAGModule._PAGTextLayer._Make(duration, text, fontSize, fontFamily, fontStyle));
     } else {
-      return new PAGTextLayer(this.module._PAGTextLayer._Make(duration, text));
+      return new PAGTextLayer(PAGModule._PAGTextLayer._Make(duration, text));
     }
   }
 

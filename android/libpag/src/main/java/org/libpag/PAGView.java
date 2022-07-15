@@ -207,6 +207,11 @@ public class PAGView extends TextureView implements TextureView.SurfaceTextureLi
          * Notifies the repetition of the animation.
          */
         void onAnimationRepeat(PAGView view);
+
+        /**
+         * Notifies the occurrence of another frame of the animation.
+         */
+        void onAnimationUpdate(PAGView view);
     }
 
     /**
@@ -269,12 +274,16 @@ public class PAGView extends TextureView implements TextureView.SurfaceTextureLi
         @Override
         public void onAnimationEnd(Animator animation) {
             super.onAnimationEnd(animation);
-            ArrayList<PAGViewListener> arrayList;
-            synchronized (PAGView.this) {
-                arrayList = new ArrayList<>(mViewListeners);
-            }
-            for (PAGViewListener listener : arrayList) {
-                listener.onAnimationEnd(PAGView.this);
+            // Align with iOS platform, avoid triggering this method when stopping
+            int repeatCount = ((ValueAnimator) animation).getRepeatCount();
+            if (repeatCount >= 0 && (currentPlayTime / animation.getDuration() > repeatCount)) {
+                ArrayList<PAGViewListener> arrayList;
+                synchronized (PAGView.this) {
+                    arrayList = new ArrayList<>(mViewListeners);
+                }
+                for (PAGViewListener listener : arrayList) {
+                    listener.onAnimationEnd(PAGView.this);
+                }
             }
         }
 
@@ -396,7 +405,6 @@ public class PAGView extends TextureView implements TextureView.SurfaceTextureLi
         if (pagSurface != null) {
             pagSurface.freeCache();
         }
-        animator.removeUpdateListener(mAnimatorUpdateListener);
 
         boolean surfaceDestroy = true;
         if (g_PAGViewHandler != null && surface != null) {
@@ -763,7 +771,15 @@ public class PAGView extends TextureView implements TextureView.SurfaceTextureLi
      */
     public boolean flush() {
         pagPlayer.setProgress(animator.getAnimatedFraction());
-        return pagPlayer.flush();
+        boolean result = pagPlayer.flush();
+        ArrayList<PAGViewListener> arrayList;
+        synchronized (PAGView.this) {
+            arrayList = new ArrayList<>(mViewListeners);
+        }
+        for (PAGViewListener listener : arrayList) {
+            listener.onAnimationUpdate(PAGView.this);
+        }
+        return result;
     }
 
     /**
@@ -835,5 +851,11 @@ public class PAGView extends TextureView implements TextureView.SurfaceTextureLi
         }
         _isAnimatorPreRunning = null;
         doPlay();
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        animator.removeUpdateListener(mAnimatorUpdateListener);
     }
 }

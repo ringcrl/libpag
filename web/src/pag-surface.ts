@@ -1,23 +1,32 @@
-import { AlphaType, ColorType, PAG } from './types';
+import { PAGModule } from './binding';
+import { AlphaType, ColorType } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGSurface {
-  public static module: PAG;
-
-  public static FromCanvas(canvasID: string): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromCanvas(canvasID);
+  /**
+   * Make a PAGSurface from canvas.
+   */
+  public static fromCanvas(canvasID: string): PAGSurface {
+    const wasmIns = PAGModule._PAGSurface._FromCanvas(canvasID);
+    if (!wasmIns) throw new Error(`Make PAGSurface from canvas ${canvasID} fail!`);
     return new PAGSurface(wasmIns);
   }
-
-  public static FromTexture(textureID: number, width: number, height: number, flipY: boolean): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromTexture(textureID, width, height, flipY);
+  /**
+   * Make a PAGSurface from texture.
+   */
+  public static fromTexture(textureID: number, width: number, height: number, flipY: boolean): PAGSurface {
+    const wasmIns = PAGModule._PAGSurface._FromTexture(textureID, width, height, flipY);
+    if (!wasmIns) throw new Error(`Make PAGSurface from texture ${textureID} fail!`);
     return new PAGSurface(wasmIns);
   }
-
-  public static FromRenderTarget(frameBufferID: number, width: number, height: number, flipY: boolean): PAGSurface {
-    const wasmIns = PAGSurface.module._PAGSurface._FromRenderTarget(frameBufferID, width, height, flipY);
+  /**
+   * Make a PAGSurface from frameBuffer.
+   */
+  public static fromRenderTarget(frameBufferID: number, width: number, height: number, flipY: boolean): PAGSurface {
+    const wasmIns = PAGModule._PAGSurface._FromRenderTarget(frameBufferID, width, height, flipY);
+    if (!wasmIns) throw new Error(`Make PAGSurface from frameBuffer ${frameBufferID} fail!`);
     return new PAGSurface(wasmIns);
   }
 
@@ -67,11 +76,11 @@ export class PAGSurface {
     const rowBytes = this.width() * (colorType === ColorType.ALPHA_8 ? 1 : 4);
     const length = rowBytes * this.height();
     const dataUint8Array = new Uint8Array(length);
-    const dataPtr = PAGSurface.module._malloc(dataUint8Array.byteLength);
-    const dataOnHeap = new Uint8Array(PAGSurface.module.HEAPU8.buffer, dataPtr, dataUint8Array.byteLength);
+    const dataPtr = PAGModule._malloc(dataUint8Array.byteLength);
+    const dataOnHeap = new Uint8Array(PAGModule.HEAPU8.buffer, dataPtr, dataUint8Array.byteLength);
     const res = this.wasmIns._readPixels(colorType, alphaType, dataPtr, rowBytes) as boolean;
     dataUint8Array.set(dataOnHeap);
-    PAGSurface.module._free(dataPtr);
+    PAGModule._free(dataPtr);
     return res ? dataUint8Array : null;
   }
 

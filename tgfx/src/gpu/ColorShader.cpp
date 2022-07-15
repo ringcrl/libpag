@@ -31,7 +31,7 @@ bool ColorShader::isOpaque() const {
 }
 
 std::unique_ptr<FragmentProcessor> ColorShader::asFragmentProcessor(const FPArgs&) const {
-  return ConstColorProcessor::Make(color);
+  return ConstColorProcessor::Make(color.premultiply(), InputMode::ModulateA);
 }
 
 }  // namespace tgfx

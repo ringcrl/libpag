@@ -1,12 +1,13 @@
 import { PAGComposition } from './pag-composition';
-import { LayerType, Marker, Matrix, PAG, Rect, Vector } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
+import { Matrix } from './core/matrix';
+import { layer2typeLayer, proxyVector } from './utils/type-utils';
+
+import type { LayerType, Marker, Rect } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGLayer {
-  public static module: PAG;
-
   public wasmIns: any;
   public isDestroyed: any;
 
@@ -37,11 +38,13 @@ export class PAGLayer {
    * animation matrix for displaying.
    */
   public matrix(): Matrix {
-    return this.wasmIns._matrix() as Matrix;
+    const wasmIns = this.wasmIns._matrix();
+    if (!wasmIns) throw new Error('Get matrix fail!');
+    return new Matrix(wasmIns);
   }
 
   public setMatrix(matrix: Matrix) {
-    this.wasmIns._setMatrix(matrix);
+    this.wasmIns._setMatrix(matrix.wasmIns);
   }
   /**
    * Resets the matrix to its default value.
@@ -54,7 +57,9 @@ export class PAGLayer {
    * matrix from animation.
    */
   public getTotalMatrix(): Matrix {
-    return this.wasmIns._resetMatrix() as Matrix;
+    const wasmIns = this.wasmIns._getTotalMatrix();
+    if (!wasmIns) throw new Error('Get total matrix fail!');
+    return new Matrix(this.wasmIns._getTotalMatrix());
   }
   /**
    * Returns the current alpha of the layer if previously set.
@@ -93,13 +98,17 @@ export class PAGLayer {
    * Returns the parent PAGComposition of current PAGLayer.
    */
   public parent(): PAGComposition {
-    return new PAGComposition(this.wasmIns._parent());
+    const wasmIns = this.wasmIns._parent();
+    if (!wasmIns) throw new Error('Get total matrix fail!');
+    return new PAGComposition(wasmIns);
   }
   /**
    * Returns the markers of this layer.
    */
-  public markers(): Vector<Marker> {
-    return this.wasmIns._markers() as Vector<Marker>;
+  public markers() {
+    const wasmIns = this.wasmIns._markers();
+    if (!wasmIns) throw new Error('Get markers fail!');
+    return proxyVector(wasmIns, (wasmIns: any) => wasmIns as Marker);
   }
   /**
    * Converts the time from the PAGLayer's (local) timeline to the PAGSurface (global) timeline. The
@@ -189,7 +198,9 @@ export class PAGLayer {
    * Returns trackMatte layer of this layer.
    */
   public trackMatteLayer(): PAGLayer {
-    return new PAGLayer(this.wasmIns._trackMatteLayer());
+    const wasmIns = this.wasmIns._trackMatteLayer();
+    if (!wasmIns) throw new Error('Get track matte layer fail!');
+    return layer2typeLayer(wasmIns);
   }
   /**
    * Indicate whether this layer is excluded from parent's timeline. If set to true, this layer's
@@ -201,7 +212,7 @@ export class PAGLayer {
   /**
    * Set the excludedFromTimeline flag of this layer.
    */
-  public setExcludedFromTimeline(value: boolean) {
+  public setExcludedFromTimeline(value: boolean): void {
     this.wasmIns._setExcludedFromTimeline(value);
   }
   /**
@@ -209,6 +220,12 @@ export class PAGLayer {
    */
   public isPAGFile(): boolean {
     return this.wasmIns._isPAGFile() as boolean;
+  }
+  /**
+   * Returns this layer as a type layer.
+   */
+  public asTypeLayer() {
+    return layer2typeLayer(this);
   }
 
   public isDelete(): boolean {

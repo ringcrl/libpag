@@ -1,20 +1,15 @@
+import { PAGModule } from './binding';
 import { PAGComposition } from './pag-composition';
-import { PAGImage } from './pag-image';
-import { PAGImageLayer } from './pag-image-layer';
-import { PAGLayer } from './pag-layer';
-import { PAGSolidLayer } from './pag-solid-layer';
-import { PAGTextLayer } from './pag-text-layer';
-import { LayerType, PAG, PAGTimeStretchMode, TextDocument, Vector } from './types';
 import { readFile } from './utils/common';
 import { wasmAwaitRewind, wasmAsyncMethod, destroyVerify } from './utils/decorators';
-import { ErrorCode } from './utils/error-map';
-import { Log } from './utils/log';
-import { proxyVector } from './utils/type-utils';
+import { getLayerTypeName, layer2typeLayer, proxyVector } from './utils/type-utils';
+
+import type { PAGImage } from './pag-image';
+import type { LayerType, PAGTimeStretchMode, TextDocument } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGFile extends PAGComposition {
-  public static module: PAG;
   /**
    * Load pag file from file.
    */
@@ -28,32 +23,33 @@ export class PAGFile extends PAGComposition {
     } else if (data instanceof ArrayBuffer) {
       buffer = data;
     }
-    if (buffer === null) {
-      Log.errorByCode(ErrorCode.PagFileDataError);
-    } else {
-      return PAGFile.loadFromBuffer(buffer);
-    }
+    if (!buffer)
+      throw new Error(
+        'Initialize PAGFile data type error, please put check data type must to be File ｜ Blob | ArrayBuffer!',
+      );
+    return PAGFile.loadFromBuffer(buffer);
   }
   /**
    * Load pag file from arrayBuffer
    */
   public static loadFromBuffer(buffer: ArrayBuffer) {
-    if (!buffer || !(buffer.byteLength > 0)) Log.errorByCode(ErrorCode.PagFileDataEmpty);
+    if (!buffer || !(buffer.byteLength > 0)) throw new Error('Initialize PAGFile data not be empty!');
     const dataUint8Array = new Uint8Array(buffer);
     const numBytes = dataUint8Array.byteLength;
-    const dataPtr = this.module._malloc(numBytes);
-    const dataOnHeap = new Uint8Array(this.module.HEAPU8.buffer, dataPtr, numBytes);
+    const dataPtr = PAGModule._malloc(numBytes);
+    const dataOnHeap = new Uint8Array(PAGModule.HEAPU8.buffer, dataPtr, numBytes);
     dataOnHeap.set(dataUint8Array);
-    const wasmIns = this.module._PAGFile._Load(dataOnHeap.byteOffset, dataOnHeap.length);
+    const wasmIns = PAGModule._PAGFile._Load(dataOnHeap.byteOffset, dataOnHeap.length);
+    if (!wasmIns) throw new Error('Load PAGFile fail!');
     const pagFile = new PAGFile(wasmIns);
-    this.module._free(dataPtr);
+    PAGModule._free(dataPtr);
     return pagFile;
   }
   /**
    * The maximum tag level current SDK supports.
    */
   public static maxSupportedTagLevel(): number {
-    return this.module._PAGFile._MaxSupportedTagLevel() as number;
+    return PAGModule._PAGFile._MaxSupportedTagLevel() as number;
   }
 
   /**
@@ -91,40 +87,32 @@ export class PAGFile extends PAGComposition {
    * Replace the text data of the specified index. The index ranges from 0 to PAGFile.numTexts - 1.
    * Passing in null for the textData parameter will reset it to default text data.
    */
-  public replaceText(editableTextIndex: number, textData: TextDocument) {
-    return this.wasmIns._replaceText(editableTextIndex, textData);
+  public replaceText(editableTextIndex: number, textData: TextDocument): void {
+    this.wasmIns._replaceText(editableTextIndex, textData);
   }
   /**
    * Replace the image content of the specified index with a PAGImage object. The index ranges from
    * 0 to PAGFile.numImages - 1. Passing in null for the image parameter will reset it to default
    * image content.
    */
-  public replaceImage(editableImageIndex: number, pagImage: PAGImage) {
+  public replaceImage(editableImageIndex: number, pagImage: PAGImage): void {
     this.wasmIns._replaceImage(editableImageIndex, pagImage.wasmIns);
   }
   /**
    * Return an array of layers by specified editable index and layer type.
    */
   public getLayersByEditableIndex(editableIndex: Number, layerType: LayerType) {
-    const vector = this.wasmIns._getLayersByEditableIndex(editableIndex, layerType) as Vector<any>;
-    switch (layerType) {
-      case LayerType.Solid:
-        return proxyVector(vector, PAGSolidLayer);
-      case LayerType.Text:
-        return proxyVector(vector, PAGTextLayer);
-      case LayerType.Image:
-        return proxyVector(vector, PAGImageLayer);
-      default:
-        return proxyVector(vector, PAGLayer);
-    }
+    const wasmIns = this.wasmIns._getLayersByEditableIndex(editableIndex, layerType);
+    if (!wasmIns) throw new Error(`Get ${getLayerTypeName(layerType)} layers by ${editableIndex} fail!`);
+    return proxyVector(wasmIns, layer2typeLayer);
   }
   /**
    * Returns the indices of the editable layers in this PAGFile.
    * If the editableIndex of a PAGLayer is not present in the returned indices, the PAGLayer should
    * not be treated as editable.
    */
-  public getEditableIndices(layerType: LayerType)  {
-    return this.wasmIns._getEditableIndices(layerType) as Vector<number>;
+  public getEditableIndices(layerType: LayerType): Array<number> {
+    return this.wasmIns._getEditableIndices(layerType);
   }
   /**
    * Indicate how to stretch the original duration to fit target duration when file's duration is
@@ -151,6 +139,8 @@ export class PAGFile extends PAGComposition {
    * to its default value.
    */
   public copyOriginal(): PAGFile {
-    return new PAGFile(this.wasmIns._copyOriginal());
+    const wasmIns = this.wasmIns._copyOriginal();
+    if (!wasmIns) throw new Error(`Copy original fail!`);
+    return new PAGFile(wasmIns);
   }
 }

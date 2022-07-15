@@ -1,13 +1,21 @@
-import { PAGImage } from './pag-image';
+import { PAGModule } from './binding';
 import { PAGLayer } from './pag-layer';
-import { Vector, PAGVideoRange } from './types';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
+import { proxyVector } from './utils/type-utils';
+
+import type { PAGImage } from './pag-image';
+import type { PAGVideoRange } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGImageLayer extends PAGLayer {
-  public static Make(width: number, height: number, duration: number): PAGImageLayer {
-    return new PAGImageLayer(this.module._PAGImageLayer._Make(width, height, duration));
+  /**
+   * Make a empty PAGImageLayer with specified size.
+   */
+  public static make(width: number, height: number, duration: number): PAGImageLayer {
+    const wasmIns = PAGModule._PAGImageLayer._Make(width, height, duration);
+    if (!wasmIns) throw new Error('Make PAGImageLayer fail!');
+    return new PAGImageLayer(wasmIns);
   }
 
   /**
@@ -20,8 +28,10 @@ export class PAGImageLayer extends PAGLayer {
   /**
    * Returns the time ranges of the source video for replacement.
    */
-  public getVideoRanges(): Vector<PAGVideoRange> {
-    return this.wasmIns._getVideoRanges() as Vector<PAGVideoRange>;
+  public getVideoRanges() {
+    const wasmIns = this.wasmIns._getVideoRanges();
+    if (!wasmIns) throw new Error('Get video ranges fail!');
+    return proxyVector(wasmIns, (wasmIns) => wasmIns as PAGVideoRange);
   }
   /**
    * [Deprecated]

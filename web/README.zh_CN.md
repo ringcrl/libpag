@@ -4,7 +4,7 @@
 
 ## 介绍
 
-libpag 是 PAG (Portable Animated Graphics) 动画文件的渲染 SDK，目前已覆盖几乎所有的主流平台，包括：iOS, Android, macOS,
+libpag 是 PAG (Portable Animated Graphics) 动效文件的渲染 SDK，目前已覆盖几乎所有的主流平台，包括：iOS, Android, macOS,
 Windows, Linux, 以及 Web 端。
 
 ## 特性
@@ -18,9 +18,21 @@ PAG Web 端，由 libpag.js + libpag.wasm 文件组成。
 
 ### Browser（推荐）
 
+直接使用 `<script>` 引入，`libpag` 会被注册为一个全局变量
+
+对于生产环境我们推荐使用一个明确的版本号，以避免新版本带来不可预期的影响
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/libpag@4.0.5-release.18/lib/libpag.min.js"></script>
+```
+
+你可以在公共 CDN [cdn.jsdelivr.net/npm/libpag/](https://cdn.jsdelivr.net/npm/libpag/) 浏览 NPM 包内的内容，同时你也可以使用 `@latest` 将版本指定为最新的稳定版。
+
+也可以使用其他同步 NPM 的公共 CDN 如 [unpkg](https://unpkg.com/libpag@latest/lib/libpag.min.js)
+
 ```html
 <canvas class="canvas" id="pag"></canvas>
-<script src="https://unpkg.com/libpag@latest/lib/libpag.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/libpag@latest/lib/libpag.min.js"></script>
 <script>
   window.onload = async () => {
     // 实例化 PAG
@@ -77,7 +89,7 @@ Demo 项目提 [pag-web](https://github.com/libpag/pag-web) 供了简单的接�
 
 更多版本的兼容工作正在进行中
 
-**因受到微信浏览器“用户与页面交互之后才可以使用 Video 标签进行视频播放”规则的限制，PAG Web SDK 无法在微信浏览器下自动播放带有视频序列帧的 PAG 动画，建议设计师使用矢量导出。如果有在微信浏览器中自动播放带视频序列帧的需求可以注册软件解码器来解决，可在下文中得到答案。**
+**以上的兼容表仅代表可以运行的兼容性。对于有移动端接入需要的用户，需要阅读一下这篇[兼容性情况](./doc/compatibility.md)的文章**
 
 ## 渲染相关
 
