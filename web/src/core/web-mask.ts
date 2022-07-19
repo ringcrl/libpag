@@ -1,7 +1,9 @@
-import { ctor, EmscriptenGL, Matrix, PAG, Point, Vector } from '../types';
+import { PAGModule } from '../binding';
+import { ctor, EmscriptenGL, Point, Vector } from '../types';
 import { ScalerContext } from './scaler-context';
+import { Matrix } from './matrix';
 
-interface WebFont {
+export interface WebFont {
   name: string;
   style: string;
   size: number;
@@ -10,13 +12,11 @@ interface WebFont {
 }
 
 export class WebMask {
-  public static module: PAG;
-
   private static getLineCap(cap: ctor): CanvasLineCap {
     switch (cap) {
-      case this.module.LineCap.Round:
+      case PAGModule.TGFXLineCap.Round:
         return 'round';
-      case this.module.LineCap.Square:
+      case PAGModule.TGFXLineCap.Square:
         return 'square';
       default:
         return 'butt';
@@ -25,9 +25,9 @@ export class WebMask {
 
   private static getLineJoin(join: ctor): CanvasLineJoin {
     switch (join) {
-      case this.module.LineJoin.Round:
+      case PAGModule.TGFXLineJoin.Round:
         return 'round';
-      case this.module.LineJoin.Bevel:
+      case PAGModule.TGFXLineJoin.Bevel:
         return 'bevel';
       default:
         return 'miter';
@@ -46,19 +46,20 @@ export class WebMask {
     const context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     context.setTransform(1, 0, 0, 1, 0, 0);
     if (
-      fillType === WebMask.module.PathFillType.InverseWinding ||
-      fillType === WebMask.module.PathFillType.InverseEvenOdd
+      fillType === PAGModule.TGFXPathFillType.InverseWinding ||
+      fillType === PAGModule.TGFXPathFillType.InverseEvenOdd
     ) {
-      context.clip(path, fillType === WebMask.module.PathFillType.InverseEvenOdd ? 'evenodd' : 'nonzero');
+      context.clip(path, fillType === PAGModule.TGFXPathFillType.InverseEvenOdd ? 'evenodd' : 'nonzero');
       context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     } else {
-      context.fill(path, fillType === WebMask.module.PathFillType.EvenOdd ? 'evenodd' : 'nonzero');
+      context.fill(path, fillType === PAGModule.TGFXPathFillType.EvenOdd ? 'evenodd' : 'nonzero');
     }
   }
 
-  public fillText(webFont: WebFont, texts: Vector<string>, positions: Vector<Point>, matrix: Matrix) {
+  public fillText(webFont: WebFont, texts: Vector<string>, positions: Vector<Point>, matrixWasmIns: any) {
     const scalerContext = new ScalerContext(webFont.name, webFont.style, webFont.size, webFont.bold, webFont.italic);
     const context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    const matrix = new Matrix(matrixWasmIns);
     context.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
     context.font = scalerContext.fontString();
     for (let i = 0; i < texts.size(); i++) {
@@ -72,13 +73,14 @@ export class WebMask {
     stroke: { width: number; cap: ctor; join: ctor; miterLimit: number },
     texts: Vector<string>,
     positions: Vector<Point>,
-    matrix: Matrix,
+    matrixWasmIns: any,
   ) {
     if (stroke.width < 0.5) {
       return;
     }
     const scalerContext = new ScalerContext(webFont.name, webFont.style, webFont.size, webFont.bold, webFont.italic);
     const context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    const matrix = new Matrix(matrixWasmIns);
     context.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
     context.font = scalerContext.fontString();
     context.lineJoin = WebMask.getLineJoin(stroke.join);

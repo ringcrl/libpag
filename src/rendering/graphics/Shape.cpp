@@ -38,19 +38,7 @@ std::shared_ptr<Graphic> Shape::MakeFrom(ID assetID, const tgfx::Path& path,
   if (path.isEmpty()) {
     return nullptr;
   }
-  std::shared_ptr<tgfx::Shader> shader;
-  if (gradient.gradientType == GradientFillType::Linear) {
-    shader = tgfx::Shader::MakeLinearGradient(gradient.startPoint, gradient.endPoint,
-                                              gradient.colors, gradient.positions);
-  } else {
-    auto radius = tgfx::Point::Distance(gradient.startPoint, gradient.endPoint);
-    shader = tgfx::Shader::MakeRadialGradient(gradient.startPoint, radius, gradient.colors,
-                                              gradient.positions);
-  }
-  if (!shader) {
-    shader = tgfx::Shader::MakeColorShader(gradient.colors.back());
-  }
-  return std::shared_ptr<Graphic>(new Shape(assetID, path, std::move(shader)));
+  return std::shared_ptr<Graphic>(new Shape(assetID, path, gradient.getShader()));
 }
 
 Shape::Shape(ID assetID, tgfx::Path path, std::shared_ptr<tgfx::Shader> shader)
@@ -80,11 +68,19 @@ void Shape::draw(tgfx::Canvas* canvas, RenderCache* renderCache) const {
   tgfx::Paint paint;
   auto snapshot = renderCache->getSnapshot(this);
   if (snapshot) {
-    paint.setShader(shader->makeWithLocalMatrix(snapshot->getMatrix()));
+    auto matrix = snapshot->getMatrix();
+    if (!matrix.invert(&matrix)) {
+      return;
+    }
+    paint.setShader(shader->makeWithPostLocalMatrix(matrix));
     auto oldMatrix = canvas->getMatrix();
     canvas->concat(snapshot->getMatrix());
-    if (snapshot->getTexture()) {
-      canvas->drawMask(snapshot->getTexture(), paint);
+    auto texture = snapshot->getTexture();
+    if (texture) {
+      paint.setMaskFilter(tgfx::MaskFilter::Make(tgfx::Shader::MakeTextureShader(texture)));
+      auto rect = tgfx::Rect::MakeWH(static_cast<float>(texture->width()),
+                                     static_cast<float>(texture->height()));
+      canvas->drawRect(rect, paint);
     } else if (snapshot->getMesh()) {
       canvas->drawMesh(snapshot->getMesh(), paint);
     }

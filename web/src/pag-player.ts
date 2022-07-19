@@ -1,18 +1,20 @@
-import { PAGComposition } from './pag-composition';
+import { PAGModule } from './binding';
 import { PAGFile } from './pag-file';
-import { PAGLayer } from './pag-layer';
 import { PAGSurface } from './pag-surface';
-import { Matrix, PAG, PAGScaleMode, Rect, Vector } from './types';
 import { wasmAwaitRewind, wasmAsyncMethod, destroyVerify } from './utils/decorators';
-import { proxyVector } from './utils/type-utils';
+import { getWasmIns, layer2typeLayer, proxyVector } from './utils/type-utils';
+import { Matrix } from './core/matrix';
+
+import type { PAGLayer } from './pag-layer';
+import { PAGComposition } from './pag-composition';
+import type { PAGScaleMode, Rect } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGPlayer {
-  public static module: PAG;
-
   public static create(): PAGPlayer {
-    const wasmIns = new PAGPlayer.module._PAGPlayer();
+    const wasmIns = new PAGModule._PAGPlayer();
+    if (!wasmIns) throw new Error('Create PAGPlayer fail!');
     return new PAGPlayer(wasmIns);
   }
 
@@ -34,7 +36,7 @@ export class PAGPlayer {
    */
   @wasmAsyncMethod
   public async flush(): Promise<boolean> {
-    return (await PAGPlayer.module.webAssemblyQueue.exec(this.wasmIns._flush, this.wasmIns)) as boolean;
+    return (await PAGModule.webAssemblyQueue.exec(this.wasmIns._flush, this.wasmIns)) as boolean;
   }
   public flushSync() : boolean {
     return this.wasmIns._flush()
@@ -45,7 +47,7 @@ export class PAGPlayer {
    */
   @wasmAsyncMethod
   public async flushInternal(callback: (res: boolean) => void): Promise<boolean> {
-    return (await PAGPlayer.module.webAssemblyQueue.exec(async () => {
+    return (await PAGModule.webAssemblyQueue.exec(async () => {
       const res = await this.wasmIns._flush();
       callback(res);
       return res;
@@ -134,39 +136,51 @@ export class PAGPlayer {
   /**
    * Set the PAGSurface object for PAGPlayer to render onto.
    */
-  public setSurface(pagSurface: PAGSurface): void {
-    this.wasmIns._setSurface(pagSurface.wasmIns);
+  public setSurface(pagSurface: PAGSurface | null): void {
+    this.wasmIns._setSurface(getWasmIns(pagSurface));
   }
   /**
+   *
    * Returns the current PAGComposition for PAGPlayer to render as content.
    */
-  public getComposition(): PAGFile {
-    return new PAGFile(this.wasmIns._getComposition());
+  public getComposition(): PAGComposition {
+    const wasmIns = this.wasmIns._getComposition();
+    if (!wasmIns) throw new Error('Get composition fail!');
+    if (wasmIns._isPAGFile()) {
+      return new PAGFile(wasmIns);
+    }
+    return new PAGComposition(wasmIns);
   }
   /**
+   *
    * Sets a new PAGComposition for PAGPlayer to render as content.
    */
-  public setComposition(pagComposition: PAGComposition) {
-    this.wasmIns._setComposition(pagComposition.wasmIns);
+
+  public setComposition(pagComposition: PAGComposition | null) {
+    this.wasmIns._setComposition(getWasmIns(pagComposition));
   }
   /**
    * Returns the PAGSurface object for PAGPlayer to render onto.
    */
   public getSurface(): PAGSurface {
-    return new PAGSurface(this.wasmIns._getSurface());
+    const wasmIns = this.wasmIns._getSurface();
+    if (!wasmIns) throw new Error('Get surface fail!');
+    return new PAGSurface(wasmIns);
   }
   /**
    * Returns a copy of current matrix.
    */
   public matrix(): Matrix {
-    return this.wasmIns._matrix() as Matrix;
+    const wasmIns = this.wasmIns._matrix();
+    if (!wasmIns) throw new Error('Get matrix fail!');
+    return new Matrix(wasmIns);
   }
   /**
    * Set the transformation which will be applied to the composition. The scaleMode property
    * will be set to PAGScaleMode::None when this method is called.
    */
   public setMatrix(matrix: Matrix) {
-    this.wasmIns._setMatrix(matrix);
+    this.wasmIns._setMatrix(matrix.wasmIns);
   }
   /**
    * Set the progress of play position to next frame. It is applied only when the composition is not
@@ -204,13 +218,17 @@ export class PAGPlayer {
   }
   /**
    * Returns an array of layers that lie under the specified point. The point is in pixels and from
+   *
    * this PAGComposition's local coordinates.
    */
-  public getLayersUnderPoint(): Vector<PAGLayer> {
-    return proxyVector(this.wasmIns._getLayersUnderPoint() as Vector<any>, PAGLayer);
+  public getLayersUnderPoint(localX: number, localY: number) {
+    const wasmIns = this.wasmIns._getLayersUnderPoint(localX, localY);
+    if (!wasmIns) throw new Error(`Get layers under point, x: ${localX} y:${localY} fail!`);
+    return proxyVector(wasmIns, layer2typeLayer);
   }
   /**
    * Evaluates the PAGLayer to see if it overlaps or intersects with the specified point. The point
+   *
    * is in the coordinate space of the PAGSurface, not the PAGComposition that contains the
    * PAGLayer. It always returns false if the PAGLayer or its parent (or parent's parent...) has not
    * been added to this PAGPlayer. The pixelHitTest parameter indicates whether or not to check

@@ -19,9 +19,12 @@
 #pragma once
 
 #include <memory>
+#include "tgfx/core/BlendMode.h"
 #include "tgfx/core/Color.h"
 #include "tgfx/core/Matrix.h"
 #include "tgfx/core/Point.h"
+#include "tgfx/gpu/ColorFilter.h"
+#include "tgfx/gpu/Texture.h"
 
 namespace tgfx {
 struct FPArgs;
@@ -39,6 +42,11 @@ class Shader {
    * Create a shader that draws the specified color.
    */
   static std::shared_ptr<Shader> MakeColorShader(Color color);
+
+  static std::shared_ptr<Shader> MakeTextureShader(std::shared_ptr<Texture> texture);
+
+  static std::shared_ptr<Shader> MakeBlend(BlendMode mode, std::shared_ptr<Shader> dst,
+                                           std::shared_ptr<Shader> src);
 
   /**
    * Returns a shader that generates a linear gradient between the two specified points.
@@ -68,6 +76,22 @@ class Shader {
                                                     const std::vector<Color>& colors,
                                                     const std::vector<float>& positions);
 
+  /**
+   * Returns a shader that generates a sweep gradient given a center.
+   * @param center The center of the circle for this gradient
+   * @param startAngle Start of the angular range, corresponding to pos == 0.
+   * @param endAngle End of the angular range, corresponding to pos == 1.
+   * @param colors The array of colors, to be distributed around the center, within the gradient
+   * angle range.
+   * @param positions May be empty. The relative position of each corresponding color in the colors
+   * array. If this is empty, the the colors are distributed evenly between the start and end point.
+   * If this is not empty, the values must begin with 0, end with 1.0, and intermediate values must
+   * be strictly increasing.
+   */
+  static std::shared_ptr<Shader> MakeSweepGradient(const Point& center, float startAngle,
+                                                   float endAngle, const std::vector<Color>& colors,
+                                                   const std::vector<float>& positions);
+
   virtual ~Shader() = default;
 
   /**
@@ -80,16 +104,27 @@ class Shader {
   }
 
   /**
-   *  Returns a shader that will apply the specified localMatrix to this shader.
+   * Returns a shader that will apply the specified localMatrix to this shader. The specified
+   * matrix will be applied before any matrix associated with this shader.
    */
-  std::shared_ptr<Shader> makeWithLocalMatrix(const Matrix& matrix) const;
+  std::shared_ptr<Shader> makeWithPreLocalMatrix(const Matrix& matrix) const {
+    return makeWithLocalMatrix(matrix, true);
+  }
+
+  /**
+   * Returns a shader that will apply the specified localMatrix to this shader. The specified
+   * matrix will be applied after any matrix associated with this shader.
+   */
+  std::shared_ptr<Shader> makeWithPostLocalMatrix(const Matrix& matrix) const {
+    return makeWithLocalMatrix(matrix, false);
+  }
+
+  std::shared_ptr<Shader> makeWithColorFilter(std::shared_ptr<ColorFilter> colorFilter) const;
 
   virtual std::unique_ptr<FragmentProcessor> asFragmentProcessor(const FPArgs& args) const = 0;
 
  protected:
-  virtual std::shared_ptr<Shader> makeAsALocalMatrixShader(Matrix*) const {
-    return nullptr;
-  }
+  virtual std::shared_ptr<Shader> makeWithLocalMatrix(const Matrix& matrix, bool isPre) const;
 
   std::weak_ptr<Shader> weakThis;
 };

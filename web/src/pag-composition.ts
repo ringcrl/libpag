@@ -1,7 +1,9 @@
-import { PAG, Vector, Marker } from './types';
+import { PAGModule } from './binding';
 import { PAGLayer } from './pag-layer';
 import { destroyVerify, wasmAwaitRewind } from './utils/decorators';
-import { proxyVector } from './utils/type-utils';
+import { layer2typeLayer, proxyVector } from './utils/type-utils';
+
+import type { Marker } from './types';
 
 @destroyVerify
 @wasmAwaitRewind
@@ -9,8 +11,10 @@ export class PAGComposition extends PAGLayer {
   /**
    * Make a empty PAGComposition with specified size.
    */
-  public static Make(width: number, height: number): PAGComposition {
-    return new PAGComposition(this.module._PAGComposition._Make(width, height));
+  public static make(width: number, height: number): PAGComposition {
+    const wasmIns = PAGModule._PAGComposition._Make(width, height);
+    if (!wasmIns) throw new Error('Make PAGComposition fail!');
+    return new PAGComposition(wasmIns);
   }
   /**
    * Returns the width of the Composition.
@@ -41,9 +45,10 @@ export class PAGComposition extends PAGLayer {
    * @param index The index position of the child layer.
    * @returns The child layer at the specified index position.
    */
-  public getLayerAt(index: number): PAGLayer {
+  public getLayerAt(index: number) {
     const wasmIns = this.wasmIns._getLayerAt(index);
-    return new PAGLayer(wasmIns);
+    if (!wasmIns) throw new Error(`Get layer at ${index} fail!`);
+    return layer2typeLayer(wasmIns);
   }
   /**
    * Returns the index position of a child layer.
@@ -87,14 +92,18 @@ export class PAGComposition extends PAGLayer {
   /**
    * Remove the specified PAGLayer from current PAGComposition.
    */
-  public removeLayer(pagLayer: PAGLayer): PAGLayer {
-    return new PAGLayer(this.wasmIns._removeLayer(pagLayer.wasmIns));
+  public removeLayer(pagLayer: PAGLayer) {
+    const wasmIns = this.wasmIns._removeLayer(pagLayer.wasmIns);
+    if (!wasmIns) throw new Error('Remove layer fail!');
+    return layer2typeLayer(wasmIns);
   }
   /**
    * Remove the specified PAGLayer from current PAGComposition.
    */
-  public removeLayerAt(index: number): PAGLayer {
-    return new PAGLayer(this.wasmIns._removeLayerAt(index));
+  public removeLayerAt(index: number) {
+    const wasmIns = this.wasmIns._removeLayerAt(index);
+    if (!wasmIns) throw new Error(`Remove layer at ${index} fail!`);
+    return layer2typeLayer(wasmIns);
   }
   /**
    * Remove all PAGLayers from current PAGComposition.
@@ -123,8 +132,10 @@ export class PAGComposition extends PAGLayer {
   /**
    * Returns the audio markers of this composition.
    */
-  public audioMarkers(): Vector<Marker> {
-    return this.wasmIns._audioMarkers() as Vector<Marker>;
+  public audioMarkers() {
+    const wasmIns = this.wasmIns._audioMarkers();
+    if (!wasmIns) throw new Error(`Get audioMarkers fail!`);
+    return proxyVector(wasmIns, (wasmIns: any) => wasmIns as Marker);
   }
   /**
    * Indicates when the first frame of the audio plays in the composition's timeline.
@@ -135,14 +146,18 @@ export class PAGComposition extends PAGLayer {
   /**
    * Returns an array of layers that match the specified layer name.
    */
-  public getLayersByName(layerName: string): Vector<PAGLayer> {
-    return proxyVector(this.wasmIns._getLayersByName(layerName) as Vector<any>, PAGLayer);
+  public getLayersByName(layerName: string) {
+    const wasmIns = this.wasmIns._getLayersByName(layerName);
+    if (!wasmIns) throw new Error(`Get layers by ${layerName} fail!`);
+    return proxyVector(wasmIns, layer2typeLayer);
   }
   /**
    * Returns an array of layers that lie under the specified point. The point is in pixels and from
    * this PAGComposition's local coordinates.
    */
-  public getLayersUnderPoint(localX: number, localY: number): Vector<PAGLayer> {
-    return proxyVector(this.wasmIns._getLayersUnderPoint(localX, localY) as Vector<any>, PAGLayer);
+  public getLayersUnderPoint(localX: number, localY: number) {
+    const wasmIns = this.wasmIns._getLayersUnderPoint(localX, localY);
+    if (!wasmIns) throw new Error(`Get layers under point ${localX},${localY} fail!`);
+    return proxyVector(wasmIns, layer2typeLayer);
   }
 }

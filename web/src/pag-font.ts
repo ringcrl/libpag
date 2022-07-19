@@ -1,20 +1,18 @@
-import { PAG } from './types';
 import { readFile } from './utils/common';
-import { ErrorCode } from './utils/error-map';
-import { Log } from './utils/log';
 import { defaultFontNames } from './utils/font-family';
 import { wasmAwaitRewind, wasmAsyncMethod, destroyVerify } from './utils/decorators';
+import { PAGModule } from './binding';
 
 @destroyVerify
 @wasmAwaitRewind
 export class PAGFont {
-  public static module: PAG;
-
   /**
    * Create PAGFont instance.
    */
   public static create(fontFamily: string, fontStyle: string) {
-    return new PAGFont(this.module._PAGFont._create(fontFamily, fontStyle));
+    const wasmIns = PAGModule._PAGFont._create(fontFamily, fontStyle);
+    if (!wasmIns) throw new Error('Create PAGFont fail!');
+    return new PAGFont(wasmIns);
   }
 
   /**
@@ -23,7 +21,9 @@ export class PAGFont {
   @wasmAsyncMethod
   public static async registerFont(family: string, data: File) {
     const buffer = (await readFile(data)) as ArrayBuffer;
-    if (!buffer || !(buffer.byteLength > 0)) Log.errorByCode(ErrorCode.PagFontDataEmpty);
+    if (!buffer || !(buffer.byteLength > 0)) {
+      throw new Error('Initialize PAGFont data not be empty!');
+    }
     const dataUint8Array = new Uint8Array(buffer);
     const fontFace = new FontFace(family, dataUint8Array);
     document.fonts.add(fontFace);
@@ -40,12 +40,12 @@ export class PAGFont {
      * The fonts registered here are mainly used to put words in a list in order, and the list can put up to UINT16_MAX words.
      * The emoji font family also has emoji words.
      */
-    const vectorNames = new this.module.VectorString();
+    const vectorNames = new PAGModule.VectorString();
     const names = fontNames.concat(defaultFontNames);
     for (const name of names) {
       vectorNames.push_back(name);
     }
-    this.module._PAGFont._SetFallbackFontNames(vectorNames);
+    PAGModule._PAGFont._SetFallbackFontNames(vectorNames);
     vectorNames.delete();
   }
 

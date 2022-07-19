@@ -29,7 +29,7 @@ int64_t GetTimer() {
 }
 
 std::shared_ptr<pag::PAGFile> ReplaceImageOrText(const char *url) {
-  auto pagFile = pag::PAGFile::Load(url == nullptr ? "/data/github.com/libpag/assets/replacement.pag" : url);
+  auto pagFile = pag::PAGFile::Load(url == nullptr ? "/data/github.com/libpag/linux/star.pag" : url);
   if (pagFile == nullptr) {
     return nullptr;
   }
@@ -136,17 +136,17 @@ int main(int argc, char *argv[]) {
     }
 
     auto data = new uint8_t[bytesLength];
-    // pagSurface->readPixels(pag::ColorType::BGRA_8888, pag::AlphaType::Premultiplied, data,
-    //                        pagFile->width() * 4);
+    pagSurface->readPixels(pag::ColorType::BGRA_8888, pag::AlphaType::Premultiplied, data,
+                           pagFile->width() * 4);
     auto readTime = GetTimer();
     totalReadTime += readTime - flushTime;
 
     printf("---currentFrame:%ld, flushStatus:%ld, flushElapsed:%ld(us), readElapsed:%ld(us) \n",
            currentFrame, status, flushTime-beginTime, readTime-flushTime);
 
-    // std::string imageName = std::to_string(currentFrame);
+    std::string imageName = std::to_string(currentFrame);
 
-    // BmpWrite(data, pagFile->width(), pagFile->height(), imageName.c_str());
+    BmpWrite(data, pagFile->width(), pagFile->height(), imageName.c_str());
 
     delete[] data;
 
@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
 
   delete pagPlayer;
 
-  // printf("----totalTime--:%ld, avgFlushTime:%ld, avgReadTime:%ld\n",
-  //         GetTimer() - startTime, totalFlushTime/realFlushCnt, totalReadTime/totalFrames);
+  printf("----totalTime--:%ld, avgFlushTime:%ld, avgReadTime:%ld\n",
+          GetTimer() - startTime, totalFlushTime/realFlushCnt, totalReadTime/totalFrames);
 
   return 0;
 }

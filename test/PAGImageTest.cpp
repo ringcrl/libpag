@@ -141,8 +141,8 @@ PAG_TEST_F(PAGImageTest, image3) {
  * 用例描述: texture 的 target 是 GL_TEXTURE_RECTANGLE，origin 是 BottomLeft，当作遮罩绘制。
  */
 PAG_TEST_F(PAGImageTest, BottomLeftMask) {
-  int width = 140;
-  int height = 140;
+  int width = 110;
+  int height = 110;
   auto device = GLDevice::Make();
   auto context = device->lockContext();
   ASSERT_TRUE(context != nullptr);
@@ -155,7 +155,9 @@ PAG_TEST_F(PAGImageTest, BottomLeftMask) {
   auto image2 = imageAsMask->makeBuffer()->makeTexture(context);
   image2->_origin = tgfx::ImageOrigin::BottomLeft;
   auto canvas = surface->getCanvas();
-  canvas->drawTexture(image1.get(), image2.get(), false);
+  tgfx::Paint paint;
+  paint.setMaskFilter(tgfx::MaskFilter::Make(tgfx::Shader::MakeTextureShader(image2)));
+  canvas->drawTexture(image1.get(), &paint);
   auto pixelBuffer = PixelBuffer::Make(width, height);
   ASSERT_TRUE(pixelBuffer != nullptr);
   Bitmap bitmap(pixelBuffer);

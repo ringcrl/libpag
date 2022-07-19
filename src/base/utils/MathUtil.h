@@ -21,11 +21,17 @@
 #include <cmath>
 
 namespace pag {
+static constexpr float FLOAT_NEARLY_ZERO = 1.0f / (1 << 12);
+
 static inline float DegreesToRadians(float degrees) {
   return degrees * (static_cast<float>(M_PI) / 180.0f);
 }
 
 static inline float RadiansToDegrees(float radians) {
   return radians * (180.0f / static_cast<float>(M_PI));
+}
+
+static inline bool FloatNearlyZero(float x, float tolerance = FLOAT_NEARLY_ZERO) {
+  return fabsf(x) <= tolerance;
 }
 }  // namespace pag

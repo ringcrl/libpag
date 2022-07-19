@@ -1,13 +1,15 @@
-import { PAG, PAGScaleMode, PAGViewListenerEvent } from './types';
+import { PAGScaleMode, PAGViewListenerEvent } from './types';
 import { PAGPlayer } from './pag-player';
 import { EventManager, Listener } from './utils/event-manager';
 import { PAGSurface } from './pag-surface';
-import { PAGFile } from './pag-file';
 import { destroyVerify } from './utils/decorators';
-import { Log } from './utils/log';
-import { ErrorCode } from './utils/error-map';
 import { isOffscreenCanvas } from './utils/type-utils';
 import { BackendContext } from './core/backend-context';
+import { PAGModule } from './binding';
+
+import type { PAGComposition } from './pag-composition';
+import type { Matrix } from './core/matrix';
+import { WEBGL_CONTEXT_ATTRIBUTES } from './constant';
 
 export interface PAGViewOptions {
   /**
@@ -27,8 +29,6 @@ export interface PAGViewOptions {
 
 @destroyVerify
 export class PAGView {
-  public static module: PAG;
-
   /**
    * Create pag view.
    * @param file pag file.
@@ -37,7 +37,7 @@ export class PAGView {
    * @returns
    */
   public static async init(
-    file: PAGFile,
+    file: PAGComposition,
     canvas: string | HTMLCanvasElement | OffscreenCanvas,
     initOptions: PAGViewOptions = {},
   ): Promise<PAGView | undefined> {
@@ -49,36 +49,37 @@ export class PAGView {
     } else if (isOffscreenCanvas(canvas)) {
       canvasElement = canvas;
     }
-    if (!canvasElement) {
-      Log.errorByCode(ErrorCode.CanvasIsNotFound);
-    } else {
-      const pagPlayer = this.module.PAGPlayer.create();
-      const pagView = new PAGView(pagPlayer, canvasElement);
-      pagView.pagViewOptions = { ...pagView.pagViewOptions, ...initOptions };
+    if (!canvasElement) throw new Error('Canvas is not found!');
 
-      if (pagView.pagViewOptions.useCanvas2D) {
-        this.module.globalCanvas.retain();
-        if (!this.module.globalCanvas.glContext) throw new Error('GlobalCanvas context is not WebGL!');
-        pagView.pagGlContext = BackendContext.from(this.module.globalCanvas.glContext);
-      } else {
-        const gl = canvasElement.getContext('webgl');
-        if (!gl) throw new Error('Canvas context is not WebGL!');
-        pagView.pagGlContext = BackendContext.from(gl);
-      }
-      pagView.resetSize(pagView.pagViewOptions.useScale);
-      pagView.frameRate = file.frameRate();
-      pagView.pagSurface = this.makePAGSurface(pagView.pagGlContext, pagView.rawWidth, pagView.rawHeight);
-      pagView.player.setSurface(pagView.pagSurface);
-      pagView.player.setComposition(file);
-      pagView.setProgress(0);
-      if (pagView.pagViewOptions.firstFrame) await pagView.flush();
-      return pagView;
+    const pagPlayer = PAGModule.PAGPlayer.create();
+    const pagView = new PAGView(pagPlayer, canvasElement);
+    pagView.pagViewOptions = { ...pagView.pagViewOptions, ...initOptions };
+
+    if (pagView.pagViewOptions.useCanvas2D) {
+      PAGModule.globalCanvas.retain();
+      if (!PAGModule.globalCanvas.glContext) throw new Error('GlobalCanvas context is not WebGL!');
+      pagView.pagGlContext = BackendContext.from(PAGModule.globalCanvas.glContext);
+    } else {
+      const gl = canvasElement.getContext('webgl', WEBGL_CONTEXT_ATTRIBUTES);
+      if (!gl) throw new Error('Canvas context is not WebGL!');
+      pagView.pagGlContext = BackendContext.from(gl);
     }
+    pagView.resetSize(pagView.pagViewOptions.useScale);
+    pagView.frameRate = file.frameRate();
+    pagView.pagSurface = this.makePAGSurface(pagView.pagGlContext, pagView.rawWidth, pagView.rawHeight);
+    pagView.player.setSurface(pagView.pagSurface);
+    pagView.player.setComposition(file);
+    pagView.setProgress(0);
+    if (pagView.pagViewOptions.firstFrame) {
+      await pagView.flush();
+      pagView.currentFrame = 0;
+    }
+    return pagView;
   }
 
   private static makePAGSurface(pagGlContext: BackendContext, width: number, height: number): PAGSurface {
     if (!pagGlContext.makeCurrent()) throw new Error('Make context current fail!');
-    const pagSurface = PAGSurface.FromRenderTarget(0, width, height, true);
+    const pagSurface = PAGSurface.fromRenderTarget(0, width, height, true);
     pagGlContext.clearCurrent();
     return pagSurface;
   }
@@ -108,7 +109,7 @@ export class PAGView {
   private canvasContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null | undefined;
   private rawWidth = 0;
   private rawHeight = 0;
-  private currentFrame = 0;
+  private currentFrame = -1;
   private frameRate = 0;
   private pagViewOptions: PAGViewOptions = {
     useScale: true,
@@ -149,6 +150,9 @@ export class PAGView {
       this.eventManager.emit(PAGViewListenerEvent.onAnimationStart, this);
     }
     this.eventManager.emit(PAGViewListenerEvent.onAnimationPlay, this);
+    if (this.currentFrame === 0) {
+      this.eventManager.emit(PAGViewListenerEvent.onAnimationUpdate, this);
+    }
     this.isPlaying = true;
     this.startTime = performance.now() * 1000 - this.playTime;
     await this.flushLoop();
@@ -169,6 +173,7 @@ export class PAGView {
     this.clearTimer();
     this.playTime = 0;
     this.player.setProgress(0);
+    this.currentFrame = 0;
     await this.flush();
     this.isPlaying = false;
     if (notification) {
@@ -274,14 +279,14 @@ export class PAGView {
    */
   public async flush() {
     const res = await this.player.flushInternal((res) => {
-      if (this.pagViewOptions.useCanvas2D && res && PAGView.module.globalCanvas.canvas) {
+      if (this.pagViewOptions.useCanvas2D && res && PAGModule.globalCanvas.canvas) {
         if (!this.canvasContext) this.canvasContext = this.canvasElement?.getContext('2d');
         const compositeOperation = this.canvasContext!.globalCompositeOperation;
         this.canvasContext!.globalCompositeOperation = 'copy';
         this.canvasContext?.drawImage(
-          PAGView.module.globalCanvas.canvas,
+          PAGModule.globalCanvas.canvas,
           0,
-          PAGView.module.globalCanvas.canvas.height - this.rawHeight,
+          PAGModule.globalCanvas.canvas.height - this.rawHeight,
           this.rawWidth,
           this.rawHeight,
           0,
@@ -292,6 +297,7 @@ export class PAGView {
         this.canvasContext!.globalCompositeOperation = compositeOperation;
       }
     });
+    this.eventManager.emit(PAGViewListenerEvent.onAnimationUpdate, this);
     if (res) {
       this.eventManager.emit(PAGViewListenerEvent.onAnimationFlushed, this);
     }
@@ -306,16 +312,40 @@ export class PAGView {
   /**
    * Returns the current PAGComposition for PAGView to render as content.
    */
-  public getComposition(): PAGFile {
+  public getComposition() {
     return this.player.getComposition();
+  }
+  /**
+   * Sets a new PAGComposition for PAGView to render as content.
+   * Note: If the composition is already added to another PAGView, it will be removed from
+   * the previous PAGView.
+   */
+  public setComposition(pagComposition: PAGComposition) {
+    this.player.setComposition(pagComposition);
+  }
+  /**
+   * Returns a copy of current matrix.
+   */
+  public matrix() {
+    return this.player.matrix();
+  }
+  /**
+   * Set the transformation which will be applied to the composition. The scaleMode property
+   * will be set to PAGScaleMode::None when this method is called.
+   */
+  public setMatrix(matrix: Matrix) {
+    this.player.setMatrix(matrix);
+  }
+
+  public getLayersUnderPoint(localX: number, localY: number) {
+    return this.player.getLayersUnderPoint(localX, localY);
   }
   /**
    * Update size when changed canvas size.
    */
   public updateSize() {
     if (!this.canvasElement) {
-      Log.errorByCode(ErrorCode.CanvasElementIsNoFound);
-      return;
+      throw new Error('Canvas element is not found!');
     }
     this.rawWidth = this.canvasElement.width;
     this.rawHeight = this.canvasElement.height;
@@ -331,7 +361,7 @@ export class PAGView {
     this.player.destroy();
     this.pagSurface?.destroy();
     if (this.pagViewOptions.useCanvas2D) {
-      PAGView.module.globalCanvas.release();
+      PAGModule.globalCanvas.release();
     }
     this.pagGlContext?.destroy();
     this.pagGlContext = null;
@@ -364,6 +394,7 @@ export class PAGView {
       return;
     }
     if (this.repeatedTimes === count && this.currentFrame === currentFrame) {
+      this.eventManager.emit(PAGViewListenerEvent.onAnimationUpdate, this);
       return;
     }
     if (this.repeatedTimes < count) {
@@ -373,7 +404,6 @@ export class PAGView {
     await this.flush();
     this.currentFrame = currentFrame;
     this.repeatedTimes = count;
-    this.eventManager.emit(PAGViewListenerEvent.onAnimationUpdate, this);
   }
 
   private clearTimer(): void {
@@ -385,8 +415,7 @@ export class PAGView {
 
   private resetSize(useScale = true) {
     if (!this.canvasElement) {
-      Log.errorByCode(ErrorCode.CanvasElementIsNoFound);
-      return;
+      throw new Error('Canvas element is not found!');
     }
 
     if (!useScale || isOffscreenCanvas(this.canvasElement)) {

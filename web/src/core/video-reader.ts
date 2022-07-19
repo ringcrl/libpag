@@ -1,7 +1,6 @@
 import { VIDEO_DECODE_WAIT_FRAME } from '../constant';
 import { addListener, removeListener, removeAllListeners } from '../utils/video-listener';
-import { IS_WECHAT } from '../utils/ua';
-import { Log } from '../utils/log';
+import { IPHONE, IS_WECHAT } from '../utils/ua';
 import { EmscriptenGL } from '../types';
 
 export interface TimeRange {
@@ -32,31 +31,44 @@ const playVideoElement = async (videoElement: HTMLVideoElement) => {
   try {
     await videoElement.play();
   } catch (error: any) {
-    Log.error(error.message);
+    console.error(error.message);
     throw new Error(
       'Failed to decode video, please play PAG after user gesture. Or your can load a software decoder to decode the video.',
     );
   }
 };
 
+let videoReaderBox: HTMLDivElement | null = null;
+
 export class VideoReader {
+  public static isIOS = () => {
+    return IPHONE;
+  };
+
   private videoEl: HTMLVideoElement | null;
   private readonly frameRate: number;
   private lastFlush: number;
   private hadPlay = false;
   private staticTimeRanges: StaticTimeRanges;
+  private objectURL: string;
 
   public constructor(mp4Data: Uint8Array, frameRate: number, staticTimeRanges: TimeRange[]) {
     this.videoEl = document.createElement('video');
-    this.videoEl.style.display = 'none';
+    this.videoEl.style.visibility = 'hidden';
     this.videoEl.muted = true;
     this.videoEl.playsInline = true;
+    if (!videoReaderBox) {
+      videoReaderBox = document.createElement('div');
+      videoReaderBox.style.visibility = 'hidden';
+      document.body.appendChild(videoReaderBox);
+    }
+    videoReaderBox.appendChild(this.videoEl);
     this.videoEl.load();
     addListener(this.videoEl, 'timeupdate', this.onTimeupdate.bind(this));
     this.frameRate = frameRate;
     this.lastFlush = -1;
-    const blob = new Blob([mp4Data], { type: 'video/mp4' });
-    this.videoEl.src = URL.createObjectURL(blob);
+    this.objectURL = URL.createObjectURL(new Blob([mp4Data], { type: 'video/mp4' }));
+    this.videoEl.src = this.objectURL;
     this.staticTimeRanges = new StaticTimeRanges(staticTimeRanges);
   }
 
@@ -119,10 +131,13 @@ export class VideoReader {
     if (!this.videoEl) {
       throw new Error('Video element is null!');
     }
-
     removeAllListeners(this.videoEl, 'playing');
     removeAllListeners(this.videoEl, 'timeupdate');
-    this.videoEl = null;
+    if (videoReaderBox && this.videoEl) {
+      videoReaderBox.removeChild(this.videoEl);
+      URL.revokeObjectURL(this.objectURL);
+      this.videoEl = null;
+    }
   }
 
   private onTimeupdate() {
