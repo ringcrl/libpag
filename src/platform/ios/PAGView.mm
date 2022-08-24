@@ -183,8 +183,7 @@ void DestoryFlushQueue() {
 }
 
 - (void)checkVisible {
-  BOOL visible =
-      self.window && !self.isHidden && self.alpha > 0.0 && [valueAnimator duration] > 0.0;
+  BOOL visible = self.window && !self.isHidden && self.alpha > 0.0;
   if (_isVisible == visible) {
     return;
   }
@@ -348,7 +347,6 @@ void DestoryFlushQueue() {
   }
   [pagPlayer setComposition:newComposition];
   [valueAnimator setDuration:[pagPlayer duration]];
-  [self checkVisible];
 }
 
 - (BOOL)videoEnabled {

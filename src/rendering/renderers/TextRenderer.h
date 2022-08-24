@@ -24,7 +24,7 @@
 
 namespace pag {
 std::pair<std::vector<std::vector<GlyphHandle>>, tgfx::Rect> GetLines(
-    const TextDocument* textDocument);
+    const TextDocument* textDocument, const TextPathOptions* pathOptions);
 
 std::shared_ptr<Graphic> RenderTextBackground(ID assetID,
                                               const std::vector<std::vector<GlyphHandle>>& lines,

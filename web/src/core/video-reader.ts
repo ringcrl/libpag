@@ -1,4 +1,4 @@
-import { VIDEO_DECODE_WAIT_FRAME } from '../constant';
+import { VIDEO_DECODE_WAIT_FRAME, VIDEO_PLAYBACK_RATE_MAX, VIDEO_PLAYBACK_RATE_MIN } from '../constant';
 import { addListener, removeListener, removeAllListeners } from '../utils/video-listener';
 import { IPHONE, IS_WECHAT } from '../utils/ua';
 import { EmscriptenGL } from '../types';
@@ -38,8 +38,6 @@ const playVideoElement = async (videoElement: HTMLVideoElement) => {
   }
 };
 
-let videoReaderBox: HTMLDivElement | null = null;
-
 export class VideoReader {
   public static isIOS = () => {
     return IPHONE;
@@ -47,28 +45,21 @@ export class VideoReader {
 
   private videoEl: HTMLVideoElement | null;
   private readonly frameRate: number;
-  private lastFlush: number;
+  private lastVideoTime = -1;
   private hadPlay = false;
   private staticTimeRanges: StaticTimeRanges;
-  private objectURL: string;
+  private lastPrepareTime: { frame: number; time: number }[] = [];
 
   public constructor(mp4Data: Uint8Array, frameRate: number, staticTimeRanges: TimeRange[]) {
     this.videoEl = document.createElement('video');
-    this.videoEl.style.visibility = 'hidden';
+    this.videoEl.style.display = 'none';
     this.videoEl.muted = true;
     this.videoEl.playsInline = true;
-    if (!videoReaderBox) {
-      videoReaderBox = document.createElement('div');
-      videoReaderBox.style.visibility = 'hidden';
-      document.body.appendChild(videoReaderBox);
-    }
-    videoReaderBox.appendChild(this.videoEl);
     this.videoEl.load();
     addListener(this.videoEl, 'timeupdate', this.onTimeupdate.bind(this));
     this.frameRate = frameRate;
-    this.lastFlush = -1;
-    this.objectURL = URL.createObjectURL(new Blob([mp4Data], { type: 'video/mp4' }));
-    this.videoEl.src = this.objectURL;
+    const blob = new Blob([mp4Data], { type: 'video/mp4' });
+    this.videoEl.src = URL.createObjectURL(blob);
     this.staticTimeRanges = new StaticTimeRanges(staticTimeRanges);
   }
 
@@ -77,9 +68,10 @@ export class VideoReader {
       console.error('Video element is null!');
       return false;
     }
+    this.alignPlaybackRate(targetFrame);
     const { currentTime } = this.videoEl;
     const targetTime = targetFrame / this.frameRate;
-    this.lastFlush = targetTime;
+    this.lastVideoTime = targetTime;
     if (currentTime === 0 && targetTime === 0) {
       if (this.hadPlay) {
         return true;
@@ -131,19 +123,16 @@ export class VideoReader {
     if (!this.videoEl) {
       throw new Error('Video element is null!');
     }
+
     removeAllListeners(this.videoEl, 'playing');
     removeAllListeners(this.videoEl, 'timeupdate');
-    if (videoReaderBox && this.videoEl) {
-      videoReaderBox.removeChild(this.videoEl);
-      URL.revokeObjectURL(this.objectURL);
-      this.videoEl = null;
-    }
+    this.videoEl = null;
   }
 
   private onTimeupdate() {
-    if (!this.videoEl || this.lastFlush < 0) return;
+    if (!this.videoEl || this.lastVideoTime < 0) return;
     const { currentTime } = this.videoEl;
-    if (currentTime - this.lastFlush >= (1 / this.frameRate) * VIDEO_DECODE_WAIT_FRAME && !this.videoEl.paused) {
+    if (currentTime - this.lastVideoTime >= (1 / this.frameRate) * VIDEO_DECODE_WAIT_FRAME && !this.videoEl.paused) {
       this.videoEl.pause();
     }
   }
@@ -190,6 +179,28 @@ export class VideoReader {
         }
       }, (1000 / this.frameRate) * VIDEO_DECODE_WAIT_FRAME);
     });
+  }
+
+  private alignPlaybackRate(targetFrame: number) {
+    const now = performance.now();
+    if (this.lastPrepareTime.length === 0) {
+      this.lastPrepareTime.push({ frame: targetFrame, time: now });
+      return;
+    }
+    if (this.lastPrepareTime[this.lastPrepareTime.length - 1].frame === targetFrame) return;
+    if (targetFrame < this.lastPrepareTime[this.lastPrepareTime.length - 1].frame) {
+      this.lastPrepareTime = [];
+      this.lastPrepareTime.push({ frame: targetFrame, time: now });
+      return;
+    }
+    if (this.lastPrepareTime.length === 5) {
+      this.lastPrepareTime.shift();
+    }
+    this.lastPrepareTime.push({ frame: targetFrame, time: now });
+    const distance = (now - this.lastPrepareTime[0].time) / (targetFrame - this.lastPrepareTime[0].frame);
+    let playbackRate = 1000 / this.frameRate / distance;
+    playbackRate = Math.min(Math.max(playbackRate, VIDEO_PLAYBACK_RATE_MIN), VIDEO_PLAYBACK_RATE_MAX);
+    this.videoEl!.playbackRate = playbackRate;
   }
 }
 

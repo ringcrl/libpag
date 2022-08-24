@@ -24,7 +24,7 @@
 #include "gpu/AARectEffect.h"
 #include "gpu/ConstColorProcessor.h"
 #include "gpu/DeviceSpaceTextureEffect.h"
-#include "gpu/TextureEffect.h"
+#include "gpu/RGBAAATextureEffect.h"
 #include "gpu/opengl/GLTriangulatingPathOp.h"
 #include "tgfx/core/Mask.h"
 #include "tgfx/core/PathEffect.h"
@@ -91,6 +91,11 @@ static bool PaintToGLPaintWithTexture(const Context* context, const Paint& paint
 }
 
 GLCanvas::GLCanvas(Surface* surface) : Canvas(surface) {
+  drawContext = new GLSurfaceDrawContext(surface);
+}
+
+GLCanvas::~GLCanvas() {
+  delete drawContext;
 }
 
 void GLCanvas::clear() {
@@ -185,7 +190,7 @@ void GLCanvas::drawTexture(const Texture* texture, const RGBAAALayout* layout, c
   if (localBounds.isEmpty()) {
     return;
   }
-  auto processor = TextureEffect::Make(texture, Matrix::I(), layout);
+  auto processor = RGBAAATextureEffect::Make(texture, Matrix::I(), layout);
   if (processor == nullptr) {
     return;
   }
@@ -197,7 +202,7 @@ void GLCanvas::drawTexture(const Texture* texture, const RGBAAALayout* layout, c
   auto localMatrix = Matrix::I();
   localMatrix.postScale(localBounds.width(), localBounds.height());
   localMatrix.postTranslate(localBounds.x(), localBounds.y());
-  draw(GLFillRectOp::Make(localBounds, getViewMatrix(), localMatrix), std::move(glPaint), true);
+  draw(GLFillRectOp::Make(localBounds, state->matrix, localMatrix), std::move(glPaint), true);
 }
 
 void GLCanvas::drawPath(const Path& path, const Paint& paint) {
@@ -238,8 +243,7 @@ void GLCanvas::fillPath(const Path& path, const Paint& paint) {
   if (localBounds.isEmpty()) {
     return;
   }
-  auto viewMatrix = getViewMatrix();
-  auto op = MakeSimplePathOp(path, viewMatrix);
+  auto op = MakeSimplePathOp(path, state->matrix);
   if (op) {
     GLPaint glPaint;
     if (!PaintToGLPaint(getContext(), paint, state->alpha, nullptr, &glPaint)) {
@@ -249,11 +253,11 @@ void GLCanvas::fillPath(const Path& path, const Paint& paint) {
     return;
   }
   auto localMatrix = Matrix::I();
-  if (!viewMatrix.invert(&localMatrix)) {
+  if (!state->matrix.invert(&localMatrix)) {
     return;
   }
   auto tempPath = path;
-  tempPath.transform(viewMatrix);
+  tempPath.transform(state->matrix);
   op = GLTriangulatingPathOp::Make(tempPath, state->clip.getBounds(), localMatrix);
   if (op) {
     save();
@@ -308,8 +312,8 @@ void GLCanvas::drawMask(const Rect& bounds, const Texture* mask, const Paint& pa
     return;
   }
   glPaint.coverageFragmentProcessors.emplace_back(
-      FragmentProcessor::MulInputByChildAlpha(TextureEffect::Make(mask, maskLocalMatrix)));
-  draw(GLFillRectOp::Make(bounds, getViewMatrix(), localMatrix), std::move(glPaint));
+      FragmentProcessor::MulInputByChildAlpha(RGBAAATextureEffect::Make(mask, maskLocalMatrix)));
+  draw(GLFillRectOp::Make(bounds, state->matrix, localMatrix), std::move(glPaint));
   setMatrix(oldMatrix);
 }
 
@@ -421,7 +425,7 @@ void GLCanvas::drawAtlas(const Texture* atlas, const Matrix matrix[], const Rect
       continue;
     }
     rects.push_back(localBounds);
-    matrices.push_back(getViewMatrix());
+    matrices.push_back(state->matrix);
     auto localMatrix = Matrix::I();
     localMatrix.postScale(localBounds.width(), localBounds.height());
     localMatrix.postTranslate(tex[i].x() + localBounds.x(), tex[i].y() + localBounds.y());
@@ -437,9 +441,9 @@ void GLCanvas::drawAtlas(const Texture* atlas, const Matrix matrix[], const Rect
   GLPaint glPaint;
   if (colors) {
     glPaint.coverageFragmentProcessors.emplace_back(
-        FragmentProcessor::MulInputByChildAlpha(TextureEffect::Make(atlas)));
+        FragmentProcessor::MulInputByChildAlpha(RGBAAATextureEffect::Make(atlas)));
   } else {
-    glPaint.colorFragmentProcessors.emplace_back(TextureEffect::Make(atlas));
+    glPaint.colorFragmentProcessors.emplace_back(RGBAAATextureEffect::Make(atlas));
   }
   draw(GLFillRectOp::Make(rects, matrices, localMatrices, colorVector), std::move(glPaint), false);
 }
@@ -448,17 +452,16 @@ void GLCanvas::drawMesh(const Mesh* mesh, const Paint& paint) {
   if (mesh == nullptr) {
     return;
   }
-  auto viewMatrix = getViewMatrix();
   auto bounds = mesh->bounds();
-  if (!viewMatrix.isIdentity()) {
-    viewMatrix.mapRect(&bounds);
+  if (!state->matrix.isIdentity()) {
+    state->matrix.mapRect(&bounds);
   }
   auto clipBounds = state->clip.getBounds();
   clipBounds.roundOut();
   if (!clipBounds.intersect(bounds)) {
     return;
   }
-  auto op = mesh->getOp(viewMatrix);
+  auto op = mesh->getOp(state->matrix);
   if (op == nullptr) {
     return;
   }
@@ -472,26 +475,8 @@ void GLCanvas::drawMesh(const Mesh* mesh, const Paint& paint) {
   setMatrix(oldMatrix);
 }
 
-GLDrawer* GLCanvas::getDrawer() {
-  if (_drawer == nullptr) {
-    _drawer = GLDrawer::Make(getContext());
-  }
-  return _drawer.get();
-}
-
-Matrix GLCanvas::getViewMatrix() {
-  auto matrix = state->matrix;
-  if (surface->origin() == ImageOrigin::BottomLeft) {
-    // Flip Y
-    matrix.postScale(1, -1);
-    matrix.postTranslate(0, static_cast<float>(surface->height()));
-  }
-  return matrix;
-}
-
 void GLCanvas::draw(std::unique_ptr<GLDrawOp> op, GLPaint paint, bool aa) {
-  auto* drawer = getDrawer();
-  if (drawer == nullptr) {
+  if (drawContext == nullptr) {
     return;
   }
   auto renderTarget = surface->getRenderTarget();
@@ -519,6 +504,6 @@ void GLCanvas::draw(std::unique_ptr<GLDrawOp> op, GLPaint paint, bool aa) {
   args.renderTarget = renderTarget.get();
   args.renderTargetTexture = surface->getTexture();
   args.aa = aaType;
-  drawer->draw(std::move(args), std::move(op));
+  drawContext->draw(std::move(args), std::move(op));
 }
 }  // namespace tgfx

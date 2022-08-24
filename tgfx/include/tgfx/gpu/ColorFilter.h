@@ -18,7 +18,10 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
+#include "tgfx/core/BlendMode.h"
+#include "tgfx/core/Color.h"
 
 namespace tgfx {
 class FragmentProcessor;
@@ -26,6 +29,10 @@ class FragmentProcessor;
 class ColorFilter {
  public:
   static std::shared_ptr<ColorFilter> MakeLumaColorFilter();
+
+  static std::shared_ptr<ColorFilter> Blend(Color color, BlendMode mode);
+
+  static std::shared_ptr<ColorFilter> Matrix(const std::array<float, 20>& rowMajor);
 
   virtual ~ColorFilter() = default;
 

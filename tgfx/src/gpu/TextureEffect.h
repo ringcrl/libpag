@@ -18,23 +18,32 @@
 
 #pragma once
 
+#include "SamplerState.h"
 #include "gpu/FragmentProcessor.h"
-#include "tgfx/core/RGBAAALayout.h"
 
 namespace tgfx {
 class TextureEffect : public FragmentProcessor {
  public:
-  static std::unique_ptr<FragmentProcessor> Make(const Texture* texture,
-                                                 const Matrix& localMatrix = Matrix::I(),
-                                                 const RGBAAALayout* layout = nullptr);
+  static std::unique_ptr<FragmentProcessor> Make(const Context* context, const Texture* texture,
+                                                 SamplerState samplerState = {},
+                                                 const Matrix& localMatrix = Matrix::I());
 
   std::string name() const override {
     return "TextureEffect";
   }
 
  private:
-  explicit TextureEffect(const Texture* texture, const RGBAAALayout* layout,
-                         const Matrix& localMatrix);
+  struct Sampling;
+
+  enum class ShaderMode {
+    None,  // Using HW mode
+    Clamp,
+    Repeat,
+    MirrorRepeat,
+    ClampToBorder
+  };
+
+  TextureEffect(const Texture* texture, const Sampling& sampling, const Matrix& localMatrix);
 
   void onComputeProcessorKey(BytesKey* bytesKey) const override;
 
@@ -44,8 +53,18 @@ class TextureEffect : public FragmentProcessor {
     return texture->getSampler();
   }
 
+  SamplerState onSamplerState(size_t) const override {
+    return samplerState;
+  }
+
+  static ShaderMode GetShaderMode(SamplerState::WrapMode mode);
+
   const Texture* texture;
-  const RGBAAALayout* layout;
+  SamplerState samplerState;
+  Rect subset;
+  Rect clamp;
+  ShaderMode shaderModeX;
+  ShaderMode shaderModeY;
   CoordTransform coordTransform;
 
   friend class GLTextureEffect;
